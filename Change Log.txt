@@ -76,3 +76,7 @@ Change Log starting from 1/31/19.
 2/20/19
 	Features:
 		- Added camera lock for boss fight
+		
+2/22/19
+	Features:
+		- Added the following sounds: bullet hit, player hit, enemy destroyed, health, shield		

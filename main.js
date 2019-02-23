@@ -18,6 +18,7 @@ function Sound(src) {
 }
 
 var soundSong = new Sound("audio/track_1.wav");
+soundSong.sound.volume = 0.5;
 	
 function Animation(spriteSheet, frameWidth, frameHeight, sheetWidth, frameDuration, frames, loop, scale) {
     this.spriteSheet = spriteSheet;
@@ -379,6 +380,8 @@ function PowerUp(game, spritesheet, x, y, width, height, scale, type) {
     this.boundingbox = new BoundingBox(x, y, this.width * scale, this.height * scale);
 	this.floatHeight = 10;
 	this.soundCoin = new Sound("audio/coin.wav");
+	this.soundHealth = new Sound("audio/health.wav");
+	this.soundShield = new Sound("audio/shield.wav");
     Entity.call(this, game, x, y, width, height, scale, type);
 }
 
@@ -403,6 +406,7 @@ PowerUp.prototype.update = function () {
 		if (this.game.Hero.health <= this.game.Hero.maxHealth - 1) {
 			if (this.boundingbox.collide(this.game.Hero.boundingbox)) {
 					if (DEBUG) console.log("Hero got " + this.type + " power up!");
+					this.soundHealth.play();
 					this.game.Hero.health++;
 					this.removeFromWorld = true;
 			}	
@@ -420,6 +424,7 @@ PowerUp.prototype.update = function () {
 		if (this.boundingbox.collide(this.game.Hero.boundingbox)) {
 					if (DEBUG) console.log("Hero got " + this.type + " power up!");
 					this.game.Hero.shield += 3;
+					this.soundShield.play();
 					this.removeFromWorld = true;
 		}
 	}
@@ -467,6 +472,7 @@ function FlyingRobot(game, spritesheet, x, y, width, height, powerUp, powerUpTyp
 	this.active = false;
 	this.powerUp = powerUp;
 	this.powerUpType = powerUpType;
+	this.soundDeath = new Sound("audio/death-enemy.wav");
     this.boundingbox = new BoundingBox(x, y, width, height);
     Entity.call(game, spritesheet, x, y, width, height, powerUp, powerUpType);
 }
@@ -495,6 +501,7 @@ FlyingRobot.prototype.update = function () {
 	        }
 	        
 	    }
+		this.soundDeath.play();
 		this.removeFromWorld = true;
 	}
 
@@ -562,6 +569,7 @@ function Turret(game, spritesheet, x, y, width, height, powerUp, powerUpType) {
     this.powerUp = powerUp;
     this.powerUpType = powerUpType;
     this.shooting = false;
+	this.soundDeath = new Sound("audio/death-enemy.wav");
     this.boundingbox = new BoundingBox(x, y+20, width, height-20);
     Entity.call(game, spritesheet, x, y, width, height, powerUp, powerUpType);
 }
@@ -572,7 +580,7 @@ Turret.prototype.constructor = Turret;
 Turret.prototype.update = function () {
     // monster dead
     if (this.hitPoints <= 0) {
-        this.game.Hero.score += 200;
+        this.game.Hero.score += 250;
         // drop powerUp
         if (this.powerUp) {
             if (this.powerUpType === "shield") {
@@ -590,7 +598,8 @@ Turret.prototype.update = function () {
             }
 
         }
-        this.removeFromWorld = true;
+        this.soundDeath.play();
+		this.removeFromWorld = true;
     }
 
     this.boundingbox = new BoundingBox(this.x, this.y+20, this.width, this.height-20);
@@ -686,6 +695,7 @@ function Mech(game, spritesheet, x, y, width, height, powerUp, powerUpType) {
 	this.jumpHeight = 25;
 	this.baseY = y;
 	this.baseX = x;
+	this.soundDeath = new Sound("audio/death-enemy.wav");
     this.boundingbox = new BoundingBox(x+27, y, this.width-35, this.height);
     Entity.call(game, spritesheet, x, y, width, height, powerUp, powerUpType);
 }
@@ -719,7 +729,8 @@ Mech.prototype.update = function () {
 			}
 
         }
-        this.removeFromWorld = true;
+        this.soundDeath.play();
+		this.removeFromWorld = true;
     }
 
     
@@ -939,7 +950,8 @@ function Soldier(game, spritesheet, x, y) {
 	this.currentSpecial = this.specials[0];
 	this.shootElapsedTime = 10;
 	this.weapon = "basic";
-	this.soundShoot = new Sound("audio/shoot-1.wav");
+	this.soundDamage = new Sound("audio/damage.wav");
+	this.soundJump = new Sound("audio/jump.wav");
     this.boundingbox = new BoundingBox(this.x+2, this.y+2, this.width-7, this.height);
 	
     Entity.call(this, game, x, y);
@@ -958,6 +970,7 @@ Soldier.prototype.update = function () {
 
 		// hit by bullet            
 		if (!bullet.hit && this.boundingbox.collide(bullet.boundingbox)) {
+			this.soundDamage.play();
 			if (DEBUG) console.log("hit!");
 			bullet.hit = true;
 			if (this.shield > 0) this.shield--;
@@ -1003,7 +1016,6 @@ Soldier.prototype.update = function () {
 			var bullet = new Bullet(this.game, AM.getAsset("./img/bullet.png"), this.x + compensate, this.y + compensateY, this.direction, aimY);
 			this.game.addEntity(bullet);
 			this.game.bullets.push(bullet);
-			this.soundShoot.play();
 			this.shootElapsedTime = 0; 
 		} 
         
@@ -1051,6 +1063,7 @@ Soldier.prototype.update = function () {
     if (this.jump && !this.jumping && !this.falling) {
         this.jumping = true;
         this.basey = this.y;
+		this.soundJump.play();
     }
 	
     // free fall
@@ -1278,6 +1291,9 @@ function Bullet(game, spritesheet, x, y, direction, aimY) {
 	this.direction = direction;
 	this.aimY = aimY;
 	this.hit = false;
+	this.soundShoot = new Sound("audio/shoot-1.wav");
+	this.soundHit = new Sound("audio/hit.wav");
+	this.soundShoot.play();
 	this.boundingbox = new BoundingBox(this.x, this.y, this.width, this.height);
     Entity.call(this, game, this.x, this.y);
 }
@@ -1308,11 +1324,13 @@ Bullet.prototype.update = function () {
 
 Bullet.prototype.draw = function () {
 	if (this.hit) {
+		if (this.animationExplosion.elapsedTime === 0) this.soundHit.play();
 		this.animationExplosion.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
 		if (this.animationExplosion.isDone()) {
 			for( var i = 0; i < this.game.bullets.length; i++){ 
 				if ( this.game.bullets[i] === this) {
 					this.game.bullets.splice(i, 1);
+					
 					this.removeFromWorld = true;
 				}
 			}	
