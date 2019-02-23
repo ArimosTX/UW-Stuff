@@ -80,3 +80,10 @@ Change Log starting from 1/31/19.
 2/22/19
 	Features:
 		- Added the following sounds: bullet hit, player hit, enemy destroyed, health, shield		
+		
+2/23/19
+	Features:
+		- Added death animation for monsters	
+		
+	Bug Fixes:
+		- fixed ghost border around certain animations

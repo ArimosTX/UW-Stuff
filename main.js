@@ -19,6 +19,22 @@ function Sound(src) {
 
 var soundSong = new Sound("audio/track_1.wav");
 soundSong.sound.volume = 0.5;
+
+function dropPowerUp(entity) {
+	if (entity.powerUpType === "shield") {
+		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/shield.png"), entity.x, entity.boundingbox.bottom - 38, 256, 256, 0.15, "shield");
+		entity.game.addEntity(power);
+		entity.game.powerups.push(power);
+	} else if (entity.powerUpType === "health") {
+		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/health.png"), entity.x, entity.boundingbox.bottom - 35, 494, 443, 0.08, "health");
+		entity.game.addEntity(power);
+		entity.game.powerups.push(power);
+	} else if (entity.powerUpType === "coin") {
+		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/coin.png"), entity.x, entity.boundingbox.bottom - 35, 494, 496, 0.07, "coin");
+		entity.game.addEntity(power);
+		entity.game.powerups.push(power);
+	}
+}
 	
 function Animation(spriteSheet, frameWidth, frameHeight, sheetWidth, frameDuration, frames, loop, scale) {
     this.spriteSheet = spriteSheet;
@@ -460,6 +476,7 @@ Flying Robot
 */
 function FlyingRobot(game, spritesheet, x, y, width, height, powerUp, powerUpType) {
     this.animation = new CustomAnimation(spritesheet, 149, 619, 1, 50, 50, 2, 0.25, 2, true, 1);
+	this.animationDie = new Animation(AM.getAsset("./img/explosion.png"), 128, 128, 4, 0.03, 16, false, 0.4);
     this.ctx = game.ctx;
     this.spritesheet = spritesheet;
     this.game = game;
@@ -481,26 +498,13 @@ FlyingRobot.prototype = new Entity();
 FlyingRobot.prototype.constructor = FlyingRobot;
 
 FlyingRobot.prototype.update = function () {
+	
     // monster dead
-	if (this.hitPoints <= 0) {
+	if (this.animationDie.isDone()) {
 	    this.game.Hero.score += 100;
         // drop powerUp
-	    if (this.powerUp) {
-	        if (this.powerUpType === "shield") {
-	            power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/shield.png"), this.x, this.boundingbox.bottom-38, 256, 256, 0.15, "shield");
-	            this.game.addEntity(power);
-	            this.game.powerups.push(power);
-	        } else if (this.powerUpType === "health") {
-	            power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/health.png"), this.x, this.boundingbox.bottom - 35, 494, 443, 0.08, "health");
-	            this.game.addEntity(power);
-	            this.game.powerups.push(power);
-	        } else if (this.powerUpType === "coin") {
-	            power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/coin.png"), this.x, this.boundingbox.bottom - 35, 494, 496, 0.07, "coin");
-	            this.game.addEntity(power);
-	            this.game.powerups.push(power);
-	        }
+	    if (this.powerUp) dropPowerUp(this);
 	        
-	    }
 		this.soundDeath.play();
 		this.removeFromWorld = true;
 	}
@@ -539,7 +543,21 @@ FlyingRobot.prototype.update = function () {
 }
 
 FlyingRobot.prototype.draw = function () {
-    this.animation.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+	
+	if (this.hitPoints <= 0) {	
+		if (this.animationDie.elapsedTime === 0) this.soundDeath.play();
+
+		if (this.animationDie.isDone()) {
+			for( var i = 0; i < this.game.monsters.length; i++){ 
+				if ( this.game.monsters[i] === this) {
+					this.game.monsters.splice(i, 1);				
+					this.removeFromWorld = true;
+				}
+			}	
+		}
+		else this.animationDie.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);		
+	}
+    else this.animation.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
     //this.ctx.drawImage(this.spritesheet, this.x - Camera.x, this.y);
 	if (DEBUG) {
 		this.ctx.strokeStyle = "red";
@@ -556,6 +574,7 @@ Turret
 function Turret(game, spritesheet, x, y, width, height, powerUp, powerUpType) {
     this.animation = new CustomAnimation(spritesheet, 47, 159, 1, 50, 50, 1, 1.75, 1, false, 1);
 	this.animationShoot = new CustomAnimation(spritesheet, 47, 159, 1, 50, 50, 2, 0.20, 2, false, 1);
+	this.animationDie = new Animation(AM.getAsset("./img/explosion.png"), 128, 128, 4, 0.03, 16, false, 0.4);
     this.ctx = game.ctx;
     this.spritesheet = spritesheet;
     this.game = game;
@@ -579,27 +598,10 @@ Turret.prototype.constructor = Turret;
 
 Turret.prototype.update = function () {
     // monster dead
-    if (this.hitPoints <= 0) {
+    if (this.animationDie.isDone()) {
         this.game.Hero.score += 250;
         // drop powerUp
-        if (this.powerUp) {
-            if (this.powerUpType === "shield") {
-                power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/shield.png"), this.x, this.boundingbox.bottom - 38, 256, 256, 0.15, "shield");
-                this.game.addEntity(power);
-                this.game.powerups.push(power);
-            } else if (this.powerUpType === "health") {
-                power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/health.png"), this.x, this.boundingbox.bottom - 35, 494, 443, 0.08, "health");
-                this.game.addEntity(power);
-                this.game.powerups.push(power);
-            } else if (this.powerUpType === "coin") {
-                power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/coin.png"), this.x, this.boundingbox.bottom - 35, 494, 496, 0.07, "coin");
-                this.game.addEntity(power);
-                this.game.powerups.push(power);
-            }
-
-        }
-        this.soundDeath.play();
-		this.removeFromWorld = true;
+        if (this.powerUp) dropPowerUp(this);
     }
 
     this.boundingbox = new BoundingBox(this.x, this.y+20, this.width, this.height-20);
@@ -651,15 +653,27 @@ Turret.prototype.update = function () {
 }
 
 Turret.prototype.draw = function () {
-//	this.ctx.drawImage(AM.getAsset("./img/robots.png"), 47, 159, 50, 50, this.x - Camera.x, this.y, 50, 50);
 
-	if (this.shooting) { 
-		this.animationShoot.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+	// dead
+	if (this.hitPoints <= 0) {	
+		if (this.animationDie.elapsedTime === 0) this.soundDeath.play();
+
+		if (this.animationDie.isDone()) {
+			for( var i = 0; i < this.game.monsters.length; i++){ 
+				if ( this.game.monsters[i] === this) {
+					this.game.monsters.splice(i, 1);				
+					this.removeFromWorld = true;
+				}
+			}	
+		}
+		else this.animationDie.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);		
 	} else {
-		this.animation.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+		if (this.shooting) { 
+			this.animationShoot.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+		} else {
+			this.animation.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+		}
 	}
-
-
 	
     if (DEBUG) {
         this.ctx.strokeStyle = "red";
@@ -677,6 +691,7 @@ function Mech(game, spritesheet, x, y, width, height, powerUp, powerUpType) {
     this.animation = new CustomAnimation(spritesheet, 136, 155, 1, 140, 108, 1, 1.5, 1, false, 0.75);
 	this.animationShoot = new CustomAnimation(spritesheet, 136, 267, 1, 140, 108, 2, 0.20, 2, false, 0.75);
 	this.animationJump = new CustomAnimation(spritesheet, 136, 379, 1, 140, 108, 1, 0.50, 1, false, 0.75);
+	this.animationDie = new Animation(AM.getAsset("./img/explosion.png"), 128, 128, 4, 0.03, 16, false, 0.84);
     this.ctx = game.ctx;
     this.spritesheet = spritesheet;
     this.game = game;
@@ -706,31 +721,10 @@ Mech.prototype.constructor = Mech;
 Mech.prototype.update = function () {
     this.boundingbox = new BoundingBox(this.x+27, this.y, this.width-35, this.height);
 	// monster dead
-    if (this.hitPoints <= 0) {
+    if (this.animationDie.isDone()) {
         this.game.Hero.score += 500;
         // drop powerUp
-        if (this.powerUp) {
-            if (this.powerUpType === "shield") {
-                power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/shield.png"), this.x, this.boundingbox.bottom - 38, 256, 256, 0.15, "shield");
-                this.game.addEntity(power);
-                this.game.powerups.push(power);
-            } else if (this.powerUpType === "health") {
-                power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/health.png"), this.x, this.boundingbox.bottom - 35, 494, 443, 0.08, "health");
-                this.game.addEntity(power);
-                this.game.powerups.push(power);
-            } else if (this.powerUpType === "coin") {
-                power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/coin.png"), this.x, this.boundingbox.bottom - 35, 494, 496, 0.07, "coin");
-                this.game.addEntity(power);
-                this.game.powerups.push(power);
-            } else if (this.powerUpType === "grenade") {
-                power = new PowerUp(this.game, AM.getAsset("./img/PowerUp/grenade.png"), this.x, this.boundingbox.bottom - 35, 512, 512, 0.07, "grenade");
-                this.game.addEntity(power);
-                this.game.powerups.push(power);
-			}
-
-        }
-        this.soundDeath.play();
-		this.removeFromWorld = true;
+        if (this.powerUp) dropPowerUp(this);
     }
 
     
@@ -812,14 +806,29 @@ Mech.prototype.update = function () {
 }
 
 Mech.prototype.draw = function () {
+	if (this.hitPoints <= 0) {	
+		if (this.animationDie.elapsedTime === 0) this.soundDeath.play();
 
-	if (this.shooting) { 
-		this.animationShoot.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
-	} else if (this.jumping) {
-		this.animationJump.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
-	} else if (this.idle) {
-		this.animation.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+		if (this.animationDie.isDone()) {
+			this.soundDeath.play();
+			for( var i = 0; i < this.game.monsters.length; i++){ 
+				if ( this.game.monsters[i] === this) {
+					this.game.monsters.splice(i, 1);				
+					this.removeFromWorld = true;
+				}
+			}	
+		}
+		else this.animationDie.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);		
+	} else {
+		if (this.shooting) { 
+			this.animationShoot.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+		} else if (this.jumping) {
+			this.animationJump.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+		} else if (this.idle) {
+			this.animation.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+		}
 	}
+	
 
 
     if (DEBUG) {
@@ -1324,13 +1333,14 @@ Bullet.prototype.update = function () {
 
 Bullet.prototype.draw = function () {
 	if (this.hit) {
+		
 		if (this.animationExplosion.elapsedTime === 0) this.soundHit.play();
+		
 		this.animationExplosion.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
 		if (this.animationExplosion.isDone()) {
 			for( var i = 0; i < this.game.bullets.length; i++){ 
 				if ( this.game.bullets[i] === this) {
-					this.game.bullets.splice(i, 1);
-					
+					this.game.bullets.splice(i, 1);				
 					this.removeFromWorld = true;
 				}
 			}	
@@ -1504,6 +1514,7 @@ AM.queueDownload("./img/wolf.png");
 AM.queueDownload("./img/ForestTiles.png");
 AM.queueDownload("./img/dust.png");
 AM.queueDownload("./img/shields.png");
+AM.queueDownload("./img/explosion.png");
 // powerups
 AM.queueDownload("./img/PowerUp/health.png");
 AM.queueDownload("./img/PowerUp/coin.png");
@@ -1641,7 +1652,7 @@ AM.downloadAll(function () {
 	
 	// Hero
     //var Hero = new Soldier(gameEngine, AM.getAsset("./img/soldierRight.png"), 6000, 0);
-	var Hero = new Soldier(gameEngine, AM.getAsset("./img/soldierRight.png"), 400, 0);
+	var Hero = new Soldier(gameEngine, AM.getAsset("./img/soldierRight.png"), 200, 0);
     gameEngine.addEntity(Hero);
 	gameEngine.Hero = Hero;
 	
