@@ -33,6 +33,10 @@ function dropPowerUp(entity) {
 		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/coin.png"), entity.x, entity.boundingbox.bottom - 35, 494, 496, 0.07, "coin");
 		entity.game.addEntity(power);
 		entity.game.powerups.push(power);
+	} else if (entity.powerUpType === "exit") {
+		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/exit.png"), entity.x, entity.boundingbox.bottom - 111, 128, 128, 1, "exit");
+		entity.game.addEntity(power);
+		entity.game.powerups.push(power);
 	}
 }
 	
@@ -383,6 +387,7 @@ PowerUp
 */
 function PowerUp(game, spritesheet, x, y, width, height, scale, type) {
 	if (type === "shield" || type === "grenade") this.animation = new Animation(spritesheet, width, height, 1, 0.5, 1, true, scale);
+	else if (type === "exit") this.animation = new Animation(spritesheet, width, height, 8, 0.03, 32, true, scale);
 	else this.animation = new Animation(spritesheet, width, height, 8, 0.08, 8, true, scale);
     this.ctx = game.ctx;
 	this.game = game;
@@ -393,11 +398,13 @@ function PowerUp(game, spritesheet, x, y, width, height, scale, type) {
     this.x = x;
     this.y = y;
 	this.basey = y;
-    this.boundingbox = new BoundingBox(x, y, this.width * scale, this.height * scale);
+    if (this.type === "exit") this.boundingbox = new BoundingBox(x+40, y+44, this.width/2 - 10, this.height/2);
+	else this.boundingbox = new BoundingBox(x, y, this.width, this.height);
 	this.floatHeight = 10;
 	this.soundCoin = new Sound("audio/coin.wav");
 	this.soundHealth = new Sound("audio/health.wav");
 	this.soundShield = new Sound("audio/shield.wav");
+	this.soundExit = new Sound("audio/exit.wav");
     Entity.call(this, game, x, y, width, height, scale, type);
 }
 
@@ -412,10 +419,12 @@ PowerUp.prototype.update = function () {
 	duration = duration / this.animation.totalTime;
 		
 	// float effect
-	height = (4 * duration - 4 * duration * duration) * this.floatHeight;
-	this.y = this.basey - height;
-		
-    this.boundingbox = new BoundingBox(this.x, this.y, this.width, this.height);
+	if (this.type !== "exit") {
+		height = (4 * duration - 4 * duration * duration) * this.floatHeight;
+		this.y = this.basey - height;
+	}
+	if (this.type === "exit") this.boundingbox = new BoundingBox(this.x+40, this.y+44, this.width/2 - 10, this.height/2);
+    else this.boundingbox = new BoundingBox(this.x, this.y, this.width, this.height);
 	
 	// check for hero collision
 	if (this.type === "health") {
@@ -451,7 +460,13 @@ PowerUp.prototype.update = function () {
 					this.removeFromWorld = true;
 		}
 	}
-	
+	else if (this.type === "exit") {
+		if (this.boundingbox.collide(this.game.Hero.boundingbox)) {
+					if (DEBUG) console.log("Hero got " + this.type + " power up!");			
+					this.soundExit.play();
+					this.removeFromWorld = true;			
+		}
+	}
 		
 	Entity.prototype.update.call(this);
 }
@@ -841,78 +856,159 @@ Mech.prototype.draw = function () {
 
 
 /*
-Wolf Boss
+Boss 1
 */
-function Boss1(game, spritesheet, x, y, width, height) {
-	this.animation = new Animation(spritesheet, width, height, 100, 0.03, 30, true, 0.25);
+function Boss1(game, spritesheet, x, y, width, height, powerUp, powerUpType) {
+    this.animationIdleLeft = new CustomAnimation(spritesheet, 136, 584, 1, 140, 108, 1, 2.75, 1, false, 0.75);
+	this.animationNotActive = new CustomAnimation(spritesheet, 136, 584, 1, 140, 108, 1, 2.75, 1, true, 0.75);
+	this.animationIdleRight = new CustomAnimation(spritesheet, 277, 584, 1, 140, 108, 1, 2.75, 1, false, 0.75);
+	this.animationChargeLeft = new CustomAnimation(spritesheet, 136, 808, 1, 140, 108, 1, 1.75, 1, false, 0.75);
+	this.animationChargeRight = new CustomAnimation(spritesheet, 277, 808, 1, 140, 108, 1, 1.75, 1, false, 0.75);
+	this.animationDie = new Animation(AM.getAsset("./img/explosion.png"), 128, 128, 4, 0.03, 16, false, 0.84);
     this.ctx = game.ctx;
     this.spritesheet = spritesheet;
     this.game = game;
-	this.width = width * 0.25;
-    this.height = height * 0.25;
-	this.speed = 50;
+    this.width = width * 0.75;
+    this.height = height * 0.75;
+    this.speed = 400;
     this.x = x;
     this.y = y;
-	this.hitPoints = 5;
-	this.active = false;
-    this.boundingbox = new BoundingBox(x, y, width, height);
-    Entity.call(this, game, x, y, width, height);
+	this.baseX = x;
+    this.hitPoints = 12;
+    this.active = false;
+    this.powerUp = powerUp;
+    this.powerUpType = powerUpType;
+	this.charging = true;
+	this.idle = false;
+	this.direction = -1;
+	this.soundDeath = new Sound("audio/death-enemy.wav");
+    this.boundingbox = new BoundingBox(x+27, y, this.width-35, this.height);
+    Entity.call(game, spritesheet, x, y, width, height, powerUp, powerUpType);
 }
 
 Boss1.prototype = new Entity();
 Boss1.prototype.constructor = Boss1;
 
 Boss1.prototype.update = function () {
-    // monster dead
-	if (this.hitPoints <= 0) {
-		this.game.Hero.score += 2000;
-		this.removeFromWorld = true;
-	}
+    this.boundingbox = new BoundingBox(this.x+27, this.y, this.width-35, this.height);
 	
-	this.boundingbox = new BoundingBox(this.x, this.y, this.width, this.height);
-	this.lastLeft = this.boundingbox.left + 5;
-	if (this.x - this.game.Hero.x < 500) {
-		this.active = true;
-	}
-	if (this.active) {
-		// move to left
-//		this.x -= this.game.clockTick * this.speed;
-		
-		// check for bullet
-		for (var i = 0; i < this.game.bullets.length; i++) {
-			var bullet = this.game.bullets[i];
-			
-			// hit by bullet            
-			if (!bullet.hit && this.boundingbox.collide(bullet.boundingbox)) {
-				console.log("hit!");
-				this.hitPoints -= 1;
-				bullet.hit = true;
-			}
+	// monster dead
+    if (this.animationDie.isDone()) {
+        this.game.Hero.score += 1000;
+        // drop powerUp
+        if (this.powerUp) dropPowerUp(this);
+    }
+
+	// alive
+    if (this.hitPoints > 0) {
+		if (this.x - this.game.Hero.x < 325 && this.game.Hero.y > 450) {
+			this.active = true;
 		}
 		
-		// check for Hero collide
-/*		if (this.boundingbox.collide(this.game.Hero.boundingbox)) {
-			console.log("collide with hero!");
-			this.game.Hero.health -= 1;
-			this.removeFromWorld = true;
-		}	
+		if (this.active) {
+
+			// check for bullet
+			for (var i = 0; i < this.game.bullets.length; i++) {
+				var bullet = this.game.bullets[i];
+
+				// hit by bullet            
+				if (!bullet.hit && this.boundingbox.collide(bullet.boundingbox)) {
+					if (DEBUG) console.log("hit!");
+					bullet.hit = true;
+					this.hitPoints -= 1;
+				}
+			}
+	/*
+			// check for Hero collide
+			if (this.boundingbox.collide(this.game.Hero.boundingbox)) {
+				if (DEBUG) console.log("collide with hero!");
+				if (this.game.Hero.shield > 0) this.game.Hero.shield -= 3;
+				else this.game.Hero.health -= 3;
+				this.removeFromWorld = true;
+			}
 	*/
+			// charging
+			if (this.charging) {
+				var moveTick = Math.round(this.game.clockTick * this.speed * this.direction);
+				this.x += moveTick;
+				
+				// charge done
+				//if ( Math.abs(this.x - this.baseX) >= 700 ) {
+				if ( (this.animationChargeLeft.elapsedTime + this.game.clockTick > this.animationChargeLeft.totalTime) 
+						|| (this.animationChargeRight.elapsedTime + this.game.clockTick > this.animationChargeRight.totalTime) ) {
+					this.baseX = this.x;
+					this.animationIdleLeft.elapsedTime = 0;
+					this.animationIdleRight.elapsedTime = 0;
+					this.animationChargeLeft.elapsedTime = 0;
+					this.animationChargeRight.elapsedTime = 0;
+					this.charging = false;
+					this.idle = true;
+				}
+			}
+
+			// idle
+			else if (this.idle) {
+				
+				// idle done
+				if ( (this.animationIdleLeft.elapsedTime + this.game.clockTick > this.animationIdleLeft.totalTime) 
+						|| (this.animationIdleRight.elapsedTime + this.game.clockTick > this.animationIdleRight.totalTime) ) {
+					this.animationIdleLeft.elapsedTime = 0;
+					this.animationIdleRight.elapsedTime = 0;
+					this.animationChargeLeft.elapsedTime = 0;
+					this.animationChargeRight.elapsedTime = 0;
+					this.charging = true;
+					this.idle = false;
+					this.direction *= -1;
+				}
+			} 
+		}	
 	}
-	
-	Entity.prototype.update.call(this);
+    
+		
+    Entity.prototype.update.call(this);
 }
 
 Boss1.prototype.draw = function () {
+	
+	// dead
+	if (this.hitPoints <= 0) {	
+		if (this.animationDie.elapsedTime === 0) this.soundDeath.play();
 
-	this.animation.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
-
-	if (DEBUG) {
-		this.ctx.strokeStyle = "red";
-		this.ctx.strokeRect(this.x - Camera.x, this.y, this.width, this.height);
-		this.ctx.strokeStyle = "green";
-		this.ctx.strokeRect(this.boundingbox.left - Camera.x, this.boundingbox.top, this.boundingbox.width, this.boundingbox.height);
+		if (this.animationDie.isDone()) {
+			this.soundDeath.play();
+			for( var i = 0; i < this.game.monsters.length; i++){ 
+				if ( this.game.monsters[i] === this) {
+					this.game.monsters.splice(i, 1);				
+					this.removeFromWorld = true;
+				}
+			}	
+		}
+		else this.animationDie.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);		
+		
+	// not active
+	} else if (!this.active) {
+		this.animationNotActive.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+	
+	// fight
+	} else {
+		if (this.charging) {
+			if (this.direction === -1) this.animationChargeLeft.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+			else this.animationChargeRight.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+		} else if (this.idle) {
+			if (this.direction === -1) this.animationIdleLeft.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+			else this.animationIdleRight.drawFrame(this.game.clockTick, this.ctx, this.x - Camera.x, this.y);
+		}
 	}
+	
+    if (DEBUG) {
+        this.ctx.strokeStyle = "red";
+        this.ctx.strokeRect(this.x - Camera.x, this.y, this.width, this.height);
+        this.ctx.strokeStyle = "green";
+        this.ctx.strokeRect(this.boundingbox.left - Camera.x, this.boundingbox.top, this.boundingbox.width, this.boundingbox.height);
+    }
 }
+
+
 
 /*
 Running Soldier
@@ -973,6 +1069,8 @@ Soldier.prototype.update = function () {
 	this.shootElapsedTime += this.game.clockTick;
 	this.lastboundingbox = this.boundingbox;
 	
+
+	
 	// check for enemy bullets
 	for (var i = 0; i < this.game.bulletsBad.length; i++) {
 		var bullet = this.game.bulletsBad[i];
@@ -992,10 +1090,22 @@ Soldier.prototype.update = function () {
 		if (this.direction === 1) this.boundingbox = new BoundingBox(this.x+14, this.y, this.width-13, this.height);
 		else this.boundingbox = new BoundingBox(this.x+5, this.y, this.width-17, this.height);
 
+		// move hero
 		var moveTick = Math.round(this.game.clockTick * this.speed * this.direction);
 		if (this.x + moveTick >= -5 && this.x + moveTick <= 7400) this.x += moveTick;
-		if ((Camera.x + moveTick >= 0 && this.x - Camera.x >= 400 && this.x + moveTick <= 7057 && this.direction === 1) 
-			|| (Camera.x + moveTick >= 0 && this.x - Camera.x <= 400 && this.x + moveTick <= 6650 && this.direction === -1) ) Camera.x += moveTick;	
+		
+		// lock camera at boss
+		if (!Camera.lock && Camera.x >= 6650) {
+			Camera.lock = true;
+			Camera.x = 6650;
+		}
+		
+		// adjust camera
+		if (Camera.lock === false) {
+			if ((Camera.x + moveTick >= 0 && this.x - Camera.x >= 400 && this.direction === 1) 
+				|| (Camera.x + moveTick >= 0 && this.x - Camera.x <= 400 && this.direction === -1) ) Camera.x += moveTick;		
+		}
+		
 		 
 	}
 		
@@ -1496,6 +1606,7 @@ Cannonball.prototype.draw = function () {
 var Camera = {
     x: 0,
 	//x: 5600,
+	lock: false,
     width: WINDOW_WIDTH
 };
 
@@ -1510,7 +1621,6 @@ AM.queueDownload("./img/mechs.png");
 AM.queueDownload("./img/heart.png");
 AM.queueDownload("./img/weaponBackground.png");
 AM.queueDownload("./img/heartEmpty.png");
-AM.queueDownload("./img/wolf.png");
 AM.queueDownload("./img/ForestTiles.png");
 AM.queueDownload("./img/dust.png");
 AM.queueDownload("./img/shields.png");
@@ -1521,6 +1631,7 @@ AM.queueDownload("./img/PowerUp/coin.png");
 AM.queueDownload("./img/PowerUp/coinIcon.png");
 AM.queueDownload("./img/PowerUp/shield.png");
 AM.queueDownload("./img/PowerUp/grenade.png");
+AM.queueDownload("./img/PowerUp/exit.png");
 
 
 AM.downloadAll(function () {
@@ -1712,9 +1823,10 @@ AM.downloadAll(function () {
 	monsters.push(monster);
 	
 	// Boss 1
-	//var Boss = new Boss1(gameEngine, AM.getAsset("./img/wolf.png"), 3700, 500-108, 140, 108);
-	//gameEngine.addEntity(Boss);
-	//monsters.push(Boss);
+	//var Boss = new Boss1(gameEngine, AM.getAsset("./img/mechs.png"), 700, 650-81, 140, 108, true, "coin");
+	var Boss = new Boss1(gameEngine, AM.getAsset("./img/mechs.png"), 7350, 550-81, 140, 108, true, "exit");
+	gameEngine.addEntity(Boss);
+	monsters.push(Boss);
 	
 	soundSong.play();
 	
