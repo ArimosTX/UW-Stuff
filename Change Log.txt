@@ -1,3 +1,12 @@
+2/24/19
+	Features:
+		- Changed damage system.  Enemies colliding with the player no longer get destroyed, but hit the player instead.
+			When the player is hit, he is immune to damage for 1.5 seconds.
+		- Added indicator when damaged
+	
+	Bug Fixes:
+		- Fixed a bug that caused the hero to take damage from colliding with an enemy during the death animation
+		
 2/23/19
 	Features:
 		- Added Boss 1
