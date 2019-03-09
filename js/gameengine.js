@@ -166,7 +166,8 @@ GameEngine.prototype.createPowerUp = function(spritesheet, x, y, width, height, 
 GameEngine.prototype.createLevelOneMonsters = function() {
 	
 		// Power Ups
-	gameEngine.createPowerUp(AM.getAsset("./img/PowerUp/coin.png"), 1050, 500 - (0.07 * 496), 494, 496, 0.07, "coin");
+	gameEngine.createPowerUp(AM.getAsset("./img/PowerUp/grenade.png"), 1050, 500 - (0.07 * 512), 512, 512, .07, "grenade");
+	gameEngine.createPowerUp(AM.getAsset("./img/PowerUp/coin.png"), 3350, 200 - (0.07 * 496), 494, 496, 0.07, "coin");
 	gameEngine.createPowerUp(AM.getAsset("./img/PowerUp/shield.png"), 2875, 500 - (0.15 * 256), 256, 256, 0.15, "shield");
 
 	// Monsters
@@ -203,6 +204,30 @@ GameEngine.prototype.createLevelOneMonsters = function() {
 	this.addMonsters(Boss);
 }
 
+/** Load Level One Check Point.*/
+GameEngine.prototype.loadLevelOneCheckPoint = function() {
+	monster = new Mech(gameEngine, AM.getAsset("./img/mechs.png"), 4000, 500-81, 140, 108, true, "coin");
+	this.addMonsters(monster);
+	
+	monster = new FlyingRobot(gameEngine, AM.getAsset("./img/robots.png"), 4850, 350, 50, 50, false, "none");
+	this.addMonsters(monster);
+	
+	monster = new Turret(gameEngine, AM.getAsset("./img/robots.png"), 5600, 350, 50, 50, true, "coin");
+	this.addMonsters(monster);
+	
+	monster = new FlyingRobot(gameEngine, AM.getAsset("./img/robots.png"), 6150, 250, 50, 50, false, "none");
+	this.addMonsters(monster);
+	
+	monster = new Turret(gameEngine, AM.getAsset("./img/robots.png"), 6600, 250, 50, 50, true, "health");
+	this.addMonsters(monster);
+	
+	// Boss 1
+	//var Boss = new Boss1(gameEngine, AM.getAsset("./img/mechs.png"), 700, 650-81, 140, 108, true, "coin");
+	var Boss = new Boss1(gameEngine, AM.getAsset("./img/mechs.png"), 7350, 550-81, 140, 108, true, "exit");
+	this.addMonsters(Boss);
+}
+
+
 /** Add monsters to the world.*/
 GameEngine.prototype.addMonsters = function(monster) {
 	this.addEntity(monster);
@@ -211,9 +236,11 @@ GameEngine.prototype.addMonsters = function(monster) {
 
 /** Load level 1*/
 GameEngine.prototype.loadLevelOne = function() {
-	gameEngine.addEntity(gameEngine.Hero);
+	gameEngine.createLevelOneMap();
+	
 	// Monsters
 	gameEngine.createLevelOneMonsters();
+	gameEngine.addEntity(gameEngine.Hero);
 	soundSong.play();
 }
 

@@ -1,7 +1,17 @@
 var AM = new AssetManager();
 var gameEngine = new GameEngine();
+var gameShop;
+var gameMenu;
+// var database = new Database();
 const WINDOW_WIDTH = 800;
 const DEBUG = false;
+
+var heroCheckPoint = {
+	x: 0,
+	y: 0,
+	cameraX: 0,
+};
+
 
 function Sound(src) {
     this.sound = document.createElement("audio");
@@ -148,6 +158,7 @@ AM.queueDownload("./img/dust.png");
 AM.queueDownload("./img/shields.png");
 AM.queueDownload("./img/explosion.png");
 AM.queueDownload("./img/effects.png");
+AM.queueDownload("./img/grenadeBoom.png");
 // powerups
 AM.queueDownload("./img/PowerUp/health.png");
 AM.queueDownload("./img/PowerUp/coin.png");
@@ -156,6 +167,7 @@ AM.queueDownload("./img/PowerUp/shield.png");
 AM.queueDownload("./img/PowerUp/grenade.png");
 AM.queueDownload("./img/PowerUp/exit.png");
 
+AM.queueDownload("./img/pointer.png");
 
 AM.downloadAll(function () {
     var canvas = document.getElementById("gameWorld");
@@ -172,6 +184,9 @@ AM.downloadAll(function () {
 	gameEngine.goBack = false;
 	gameEngine.restartGame = false;
 	gameEngine.gameOver = false;
+	gameEngine.checkPoint = false;
+	gameEngine.shop = false;
+	gameEngine.done = false;
 	gameEngine.endLevel = false;
 	
 	gameEngine.level = 1;
@@ -181,13 +196,14 @@ AM.downloadAll(function () {
 	var creditButton = new CreditButton(320, 380, 150, 30);
 	var gobackButton = new GoBackButton(350, 400, 100, 30);
 	var playAgainButton = new PlayAgainButton(350, 300, 150, 35);
+	var continueButton = new ContinueButton(335, 575, 150, 35);
 	
 	gameEngine.playButton = playButton;
 	gameEngine.settingButton = settingButton;
 	gameEngine.creditButton = creditButton;
 	gameEngine.gobackButton = gobackButton;
 	gameEngine.playAgainButton = playAgainButton;
-	
+	gameEngine.continueButton = continueButton;
 	
 	
     gameEngine.init(ctx);
@@ -201,11 +217,45 @@ AM.downloadAll(function () {
 
 	gameEngine.createLevelOneMap();
 	gameEngine.createHero();	
-	
+	gameShop = new GameShop(gameEngine, AM.getAsset("./img/pointer.png"));
+	gameMenu = new GameMenu(gameEngine);
+	gameEngine.addEntity(gameShop);
+	gameEngine.addEntity(gameMenu);
 	
     
 	console.log("All Done!");
 });
+
+function loadCheckPoint() {
+	var hero;
+	for (var i = 0; i < gameEngine.entities.length; i++) {
+		
+		if (gameEngine.entities[i] instanceof Soldier) {
+			hero = gameEngine.entities.splice(i, 1)[0];
+			continue;
+		}
+		
+		if ( gameEngine.entities[i] instanceof Background
+			|| gameEngine.entities[i] instanceof GameMenu
+			|| gameEngine.entities[i] instanceof GameShop) continue;
+		gameEngine.entities[i].removeFromWorld = true;
+	}
+	
+	if (gameEngine.level === 1) {
+		
+		hero.x = heroCheckPoint.x;
+		hero.y = 0;
+		hero.falling = true;
+		
+		Camera.x = heroCheckPoint.cameraX;
+		gameEngine.createLevelOneMap();
+		gameEngine.loadLevelOneCheckPoint();
+		gameEngine.Hero = hero;
+		gameEngine.addEntity(gameEngine.Hero);
+	}
+	alert("Loading CheckPoint");
+}
+
 
 
 function startGame() {
@@ -214,6 +264,7 @@ function startGame() {
 		gameEngine.loadLevelOne();
 	} else {
 		// console.log(gameEngine.Hero.speed);
+		
 		gameEngine.loadLevelOne();
 	}
 	
@@ -223,17 +274,27 @@ function startGame() {
 
 function resetGame() {
 	
-	gameEngine.Hero.reset();
-	Camera.x = 0;
-	for (var i = 0; i < gameEngine.monsters.length; i++) {
-		gameEngine.monsters[i].removeFromWorld = true;
+	if (!gameEngine.shop) {
+		gameEngine.Hero.reset();
+		Camera.x = 0;
 	}
-	for (var i = 0; i < gameEngine.powerups.length; i++) {
-		gameEngine.powerups[i].removeFromWorld = true;
-	}
-	// for (var i = 0; i < gameEngine.platforms.length; i++) {
-		// gameEngine.platforms.splice(i, 1);
+	
+	// for (var i = 0; i < gameEngine.monsters.length; i++) {
+		// gameEngine.monsters[i].removeFromWorld = true;
 	// }
+	// for (var i = 0; i < gameEngine.powerups.length; i++) {
+		// gameEngine.powerups[i].removeFromWorld = true;
+	// }
+	
+	for (var i = 0; i < gameEngine.entities.length; i++) {
+		var entity = gameEngine.entities[i];
+		if (entity instanceof Soldier || 
+			entity instanceof Background ||
+			entity instanceof GameMenu ||
+			entity instanceof GameShop) continue;
+		entity.removeFromWorld = true;
+	}
+	
 }
 
 
@@ -272,11 +333,17 @@ function startInput() {
 			// gameEngine.restartGame = true;
 			gameEngine.startGame = true;
 			gameEngine.gameOver = false;
-			
 			resetGame();
 			startGame();
 		}
-	
+		
+		if (gameEngine.shop && gameEngine.continueButton.isClick(pos)) {
+			gameEngine.shop = false;
+			gameEngine.checkPoint = false;
+			resetGame();
+			startGame();
+		}
+		
 		
 	}, false);
 	
@@ -287,7 +354,26 @@ function startInput() {
     document.addEventListener('keydown', function(e){
 
 		// e.preventDefault();
-		switch(e.keyCode) {
+		if (gameEngine.shop) {
+			switch(e.keyCode) {
+				// Down
+				case 40:
+					gameShop.moveDown = true;
+
+					break;
+				case 38:
+					gameShop.moveUp = true;
+					break;
+				case 13: // purchase item
+					
+					gameShop.purchaseItem();
+					
+						
+					break;
+			}
+			
+		} else {
+			switch(e.keyCode) {
 			// Spacebar
 			case 32:
 			    gameEngine.Hero.space = true;
@@ -335,7 +421,9 @@ function startInput() {
 					// startGame();
 				// }
 				// break;
+			}
 		}
+		
       });
 	document.addEventListener('keyup', function(e){
 		
@@ -380,6 +468,22 @@ function startInput() {
             case 90:
                 gameEngine.Hero.special = false;
                 break;
+				
+			// D
+            /*case 68:
+
+				if (gameEngine.Hero.specials.length > 0) {
+					if (gameEngine.Hero.specialsIndex + 2 > gameEngine.Hero.specials.length) {
+						gameEngine.Hero.currentSpecial = gameEngine.Hero.specials[0];
+						gameEngine.Hero.specialsIndex = 0;
+					}
+					else {
+						gameEngine.Hero.currentSpecial = gameEngine.Hero.specials[gameEngine.Hero.specialsIndex+1];
+						gameEngine.Hero.specialsIndex++;
+					}
+				}
+                break;
+				*/
 		}
 	});
 }
