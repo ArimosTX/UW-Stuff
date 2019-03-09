@@ -176,6 +176,9 @@ GameMenu.prototype.draw = function() {
 		this.ctx.fillText("X: Jump", 290, 320);
 		this.ctx.fillText("C: Shoot", 290, 350);
 		this.ctx.fillText("Z: Use Special", 290, 380);
+		// S: swap weapon
+		// D: swap special
+		
 		this.ctx.fillStyle = "#6AE1F5";
 		roundRect(this.ctx, this.game.gobackButton.x, this.game.gobackButton.y, this.game.gobackButton.width, 
 									this.game.gobackButton.height, 5, true, true);

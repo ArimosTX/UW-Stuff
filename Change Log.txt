@@ -1,4 +1,11 @@
-3/9/19
+3/8/19
+	Features:
+		- Added Airstrike power-up
+		- Added Double-Damage weapon
+		- Added 3-way weapon
+		- Added weapon swap functionality
+
+3/8/19
 	Features:
 		- Added Grenade special
 		- Added special swap functionality
