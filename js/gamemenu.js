@@ -322,7 +322,8 @@ function ContinueButton(x, y, width, height) {
 }
 
 ContinueButton.prototype.isClick = function(pos) {
-    return pos.x > this.x && pos.x < this.x+this.width && pos.y < this.y+this.height && pos.y > this.y;
+    soundShopTheme.stop();
+	return pos.x > this.x && pos.x < this.x+this.width && pos.y < this.y+this.height && pos.y > this.y;
 }
 
 // draw rounding corner rectangle.. Source: https://stackoverflow.com/questions/1255512/how-to-draw-a-rounded-rectangle-on-html-canvas

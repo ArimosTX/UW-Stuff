@@ -430,7 +430,7 @@ PowerUp.prototype.update = function () {
 		if (this.boundingbox.collide(this.game.Hero.boundingbox)) {
 				if (DEBUG) console.log("Hero got " + this.type + " power up!");
 				this.sound1Up.play();
-				if (this.game.Hero.lives < 3) this.game.Hero.lives++;
+				this.game.Hero.lives++;
 				this.removeFromWorld = true;
 		}	
 	}
@@ -1076,6 +1076,7 @@ function Boss1(game, spritesheet, x, y, width, height, powerUp, powerUpType) {
 	this.shootCount = 0;
 	this.idleState = 1;
 	this.soundDeath = new Sound("audio/death-enemy.wav");
+	this.soundVictory = new Sound("audio/victory.mp3");
     this.boundingbox = new BoundingBox(x+27, y, this.width-35, this.height);
     Entity.call(game, spritesheet, x, y, width, height, powerUp, powerUpType);
 }
@@ -1204,7 +1205,10 @@ Boss1.prototype.draw = function () {
 	
 	// dead
 	if (this.hitPoints <= 0) {	
-		if (this.animationDie.elapsedTime === 0) this.soundDeath.play();
+		if (this.animationDie.elapsedTime === 0) {
+			this.soundDeath.play();
+			this.soundVictory.play();
+		}
 
 		if (this.animationDie.isDone()) {
 			this.soundDeath.play();
@@ -1344,7 +1348,6 @@ Soldier.prototype.reset = function() {
 
 Soldier.prototype.update = function () {
 	if (!this.visible) return;
-	
 	this.shootElapsedTime += this.game.clockTick;
 	this.specialElapsedTime += this.game.clockTick;
 	this.hitElapsedTime += this.game.clockTick;
@@ -1384,6 +1387,7 @@ Soldier.prototype.update = function () {
 	
 	
 	if (this.lives <= 0) {
+		soundGameOver.play();
 		this.game.gameOver = true;
 		resetGame();
 		this.game.checkPoint = false;
@@ -1771,10 +1775,10 @@ Soldier.prototype.drawUI = function () {
 	// Score
 	this.ctx.lineWidth = 5;
 	if (this.score === 0) this.ctx.strokeText("Score: " + this.score, 675, 30);
-	else this.ctx.strokeText("Score: " + this.score, 675 - ((Math.log10(this.score) + 1) * 10), 30);
+	else this.ctx.strokeText("Score: " + this.score, 675 - ((Math.log10(this.score) + 1) * 12), 30);
 	this.ctx.fillStyle = "white";
 	if (this.score === 0) this.ctx.fillText("Score: " + this.score, 675, 30);
-	else this.ctx.fillText("Score: " + this.score, 675 - ((Math.log10(this.score) + 1) * 10), 30);
+	else this.ctx.fillText("Score: " + this.score, 675 - ((Math.log10(this.score) + 1) * 12), 30);
 	
 	// Lives
 	this.ctx.drawImage(AM.getAsset("./img/hero.png"), 24, 143, 50, 50, 0, 0, 50, 50);

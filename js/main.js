@@ -39,6 +39,8 @@ soundSong.sound.loop = true;
 var soundShopTheme = new Sound("audio/Shop/theme.mp3");
 soundShopTheme.sound.volume = 0.4;
 
+var soundGameOver = new Sound("audio/gameover.mp3");
+
 function dropPowerUp(entity) {
 	if (entity.powerUpType === "shield") {
 		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/shield.png"), entity.x, entity.boundingbox.bottom - 38, 256, 256, 0.15, "shield");
@@ -277,6 +279,7 @@ function startGame() {
 	// set Camera max for lock
 	if (gameEngine.level === 1) Camera.max = 7400;
 	else if (gameEngine.level === 2) Camera.max = 20000;
+		soundSong.play();
 	
 	Camera.lock = false;
 	if (gameEngine.level === 1) {
@@ -579,8 +582,10 @@ function startInput() {
 				} else if (gameEngine.level === 2) {
 					gameEngine.Hero.x = 7000;
 					gameEngine.Hero.y = 200;
+
 					Camera.x = 6600;
 				}
+				gameEngine.Hero.falling = true;
 				
 				break;
 		}
