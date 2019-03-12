@@ -6,6 +6,10 @@ var gameMenu;
 const WINDOW_WIDTH = 800;
 const DEBUG = false;
 
+var check_point_x = {
+	"level1": 4000
+};
+
 var heroCheckPoint = {
 	x: 0,
 	y: 0,
@@ -30,6 +34,10 @@ function Sound(src) {
 
 var soundSong = new Sound("audio/track_1.wav");
 soundSong.sound.volume = 0.5;
+soundSong.sound.loop = true;
+
+var soundShopTheme = new Sound("audio/Shop/theme.mp3");
+soundShopTheme.sound.volume = 0.4;
 
 function dropPowerUp(entity) {
 	if (entity.powerUpType === "shield") {
@@ -44,6 +52,10 @@ function dropPowerUp(entity) {
 		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/coin.png"), entity.x, entity.boundingbox.bottom - 35, 494, 496, 0.07, "coin");
 		entity.game.addEntity(power);
 		entity.game.powerups.push(power);
+	} else if (entity.powerUpType === "airstrike") {
+		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/jet.png"), entity.x, entity.boundingbox.bottom - (0.08 * 333), 825, 333, .08, "airstrike");
+		entity.game.addEntity(power);
+		entity.game.powerups.push(power);	
 	} else if (entity.powerUpType === "exit") {
 		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/exit.png"), entity.x, entity.boundingbox.bottom - 111, 128, 128, 1, "exit");
 		entity.game.addEntity(power);
@@ -137,8 +149,8 @@ CustomAnimation.prototype.isDone = function () {
 
 var Camera = {
     x: 0,
-	//x: 5600,
 	lock: false,
+	max: 50000,
     width: WINDOW_WIDTH
 };
 
@@ -161,6 +173,9 @@ AM.queueDownload("./img/explosion.png");
 AM.queueDownload("./img/effects.png");
 AM.queueDownload("./img/grenadeBoom.png");
 AM.queueDownload("./img/pointer.png");
+AM.queueDownload("./img/L2Background.png");
+AM.queueDownload("./img/enemies.png");
+AM.queueDownload("./img/woods.png");
 
 // powerups
 AM.queueDownload("./img/PowerUp/health.png");
@@ -214,12 +229,7 @@ AM.downloadAll(function () {
     gameEngine.start();
 	startInput();
 	
-	// Backgrounds (gameEngine, spritesheet, x, y, speed, numberOfRepeats)
-	gameEngine.addEntity(new Background(gameEngine, AM.getAsset("./img/layer1.png"), -1535, 0, 35, 7));
-	gameEngine.addEntity(new Background(gameEngine, AM.getAsset("./img/layer2.png"), -1535, -50, 75, 8));
-
-
-	gameEngine.createLevelOneMap();
+	// gameEngine.createLevelOneMap();
 	gameEngine.createHero();	
 	gameShop = new GameShop(gameEngine, AM.getAsset("./img/pointer.png"));
 	gameMenu = new GameMenu(gameEngine);
@@ -231,6 +241,7 @@ AM.downloadAll(function () {
 });
 
 function loadCheckPoint() {
+	Camera.lock = false;
 	var hero;
 	for (var i = 0; i < gameEngine.entities.length; i++) {
 		
@@ -263,13 +274,46 @@ function loadCheckPoint() {
 
 
 function startGame() {
+	// set Camera max for lock
+	if (gameEngine.level === 1) Camera.max = 7400;
+	else if (gameEngine.level === 2) Camera.max = 20000;
+	
 	Camera.lock = false;
 	if (gameEngine.level === 1) {
+
 		gameEngine.loadLevelOne();
 	} else {
-		// console.log(gameEngine.Hero.speed);
-		
-		gameEngine.loadLevelOne();
+		// for (var i = 0; i < gameEngine.monsters.length; i++) {
+			// gameEngine.monsters.splice(i, 1);
+		// }
+		// for (var i = 0; i < gameEngine.platforms.length; i++) {
+			// gameEngine.platforms.splice(i, 1);
+		// }
+
+		// for (var i = 0; i < gameEngine.entities.length; i++) {
+			// var entity = gameEngine.entities[i];
+			// if (entity instanceof Soldier || 
+				// entity instanceof GameMenu ||
+				// entity instanceof GameShop) {
+					// continue;
+			// }
+			// gameEngine.entities.splice(i, 1);
+		// }
+		gameEngine.loadLevelTwo();
+		var hero;
+		var hasHero = false;
+		for (var i = 0; i < gameEngine.entities.length; i++) {
+			var entity = gameEngine.entities[i];
+			if (entity instanceof Soldier) {
+				hero = gameEngine.entities.splice(i, 1)[0];
+				hasHero = true;
+				break;
+			}
+		}
+		if (hasHero) {
+			gameEngine.Hero = hero;
+			gameEngine.addEntity(gameEngine.Hero);
+		} else gameEngine.addEntity(gameEngine.Hero);
 	}
 	
 
@@ -277,26 +321,41 @@ function startGame() {
 
 
 function resetGame() {
-	
-	if (!gameEngine.shop) {
+	// alert(gameEngine.shop + " "  + gameEngine.endLevel + " "  + gameEngine.gameOver);
+	if (!gameEngine.shop && !gameEngine.gameOver && !gameEngine.endLevel) {
 		gameEngine.Hero.reset();
+		// alert("hI");
+		Camera.x = 0;
+	} else if (gameEngine.gameOver) {
+		// alert("in game over");
+		gameEngine.createHero();
+		
+	} else if (gameEngine.endLevel) {
+		// alert("in end level");
+		gameEngine.Hero.x = 200;
+		gameEngine.Hero.y = 0;
+		gameEngine.checkPoint = false;
+		gameEngine.Hero.falling = true;
 		Camera.x = 0;
 	}
+
 	
-	// for (var i = 0; i < gameEngine.monsters.length; i++) {
-		// gameEngine.monsters[i].removeFromWorld = true;
-	// }
-	// for (var i = 0; i < gameEngine.powerups.length; i++) {
-		// gameEngine.powerups[i].removeFromWorld = true;
-	// }
+	for (var i = 0; i < gameEngine.monsters.length; i++) {
+		gameEngine.monsters.splice(i, 1);
+	}
+	for (var i = 0; i < gameEngine.platforms.length; i++) {
+		gameEngine.platforms.splice(i, 1);
+	}
 	
 	for (var i = 0; i < gameEngine.entities.length; i++) {
 		var entity = gameEngine.entities[i];
 		if (entity instanceof Soldier || 
-			entity instanceof Background ||
 			entity instanceof GameMenu ||
-			entity instanceof GameShop) continue;
-		entity.removeFromWorld = true;
+			entity instanceof GameShop) {
+				continue;
+		}
+		// entity.removeFromWorld = true;
+		gameEngine.entities[i].removeFromWorld = true;
 	}
 	
 }
@@ -336,15 +395,18 @@ function startInput() {
 		if (gameEngine.gameOver && gameEngine.playAgainButton.isClick(pos)) {
 			// gameEngine.restartGame = true;
 			gameEngine.startGame = true;
-			gameEngine.gameOver = false;
 			resetGame();
+			gameEngine.gameOver = false;
 			startGame();
 		}
 		
 		if (gameEngine.shop && gameEngine.continueButton.isClick(pos)) {
-			gameEngine.shop = false;
 			gameEngine.checkPoint = false;
+			// gameEngine.Hero.removeFromWorld = false;
+			gameEngine.Hero.visible = true;
 			resetGame();
+			gameEngine.shop = false;
+			gameEngine.endLevel = false;
 			startGame();
 		}
 		
@@ -500,6 +562,27 @@ function startInput() {
 				
                 break;
 				
+			// Right shift, cheat code: kill on-screen
+			case 16:
+				for (var i = 0; i < gameEngine.monsters.length; i++) {
+					var monster = gameEngine.monsters[i];
+					if (monster.x >= Camera.x && monster.x <= Camera.x + 800) monster.hitPoints -= 100;
+				}
+				break;
+
+			// "/" cheat code: warp
+			case 190:
+				if (gameEngine.level === 1) {
+					gameEngine.Hero.x = 7000;
+					gameEngine.Hero.y = 200;
+					Camera.x = 6600;
+				} else if (gameEngine.level === 2) {
+					gameEngine.Hero.x = 7000;
+					gameEngine.Hero.y = 200;
+					Camera.x = 6600;
+				}
+				
+				break;
 		}
 	});
 }
