@@ -7,8 +7,10 @@ function GameShop(game, spritesheet) {
 	this.animation =  new Animation(spritesheet, this.width, this.height, 1, 0.5, 1, true, 1.2);
 	this.pointerX = 20;
 	this.offset = 50;
-	this.item1 = new ShopItem(game, AM.getAsset("./img/PowerUp/grenade.png"), 410, 95, 35, 35, 0, 2, "Grenade");
-	this.item2 = new ShopItem(game, AM.getAsset("./img/PowerUp/shield.png"), 410, 95, 35, 35, 50, 3, "Shield");
+	this.item1 = new ShopItem(game, AM.getAsset("./img/PowerUp/grenade.png"), 410, 95, 35, 35, 0, 1, "Grenade");
+	this.item2 = new ShopItem(game, AM.getAsset("./img/PowerUp/shield.png"), 410, 95, 35, 35, 50, 2, "Shield");
+	this.item3 = new ShopItem(game, AM.getAsset("./img/PowerUp/jet.png"), 410, 95, 35, 35, 100, 4, "Missiles");
+	this.item4 = new ShopItem(game, AM.getAsset("./img/bullet2.png"), 410, 95, 35, 35, 150, 5, "x2 Pain");
 	this.items = [];
 	this.addItemToShop();
 	this.pointerY = -25;
@@ -30,12 +32,16 @@ GameShop.prototype.constructor = GameShop;
 GameShop.prototype.addItemToShop = function() {
 	this.items.push(this.item1);
 	this.items.push(this.item2);
+	this.items.push(this.item3);
+	this.items.push(this.item4);
+	this.items.push(gameEngine.continueButton);
 }
 
 GameShop.prototype.purchaseItem = function() {
 	this.hasAttemptPurchase = true;
 	for (var i = 0; i < this.items.length; i++) {
 		var item = this.items[i];
+		// alert(this.basey);
 		if (item.offset + this.boundedTop === this.basey) {
 			if (item.type === "Shield" && this.game.Hero.coins >= item.price) {
 				this.soundPurchase.play();
@@ -52,8 +58,10 @@ GameShop.prototype.purchaseItem = function() {
 			} else if (this.game.Hero.coins < item.price) {
 				this.soundError.play();
 				this.purchaseFail = true;
-			}
+			} 
 			break;
+		} else if (item instanceof ContinueButton && this.basey === 225) {
+			nextLevel();
 		}
 	}
 	
@@ -110,13 +118,15 @@ GameShop.prototype.draw = function () {
 		// item one - grenade
 		this.item1.draw();
 		this.item2.draw();
+		this.item3.draw();
+		this.item4.draw();
 	
 		this.animation.drawFrame(this.game.clockTick, this.game.ctx, this.pointerX, this.pointerY);
 		
 		// you can style here better
 		if (this.purchaseFail) this.game.ctx.fillText("Not Enough Coins", 310, 450);
 		else if (this.hasAttemptPurchase)this.game.ctx.fillText("Purchased", 350, 450);
-		this.game.ctx.fillText("Press Enter to Purchase", 290, 500);
+		this.game.ctx.fillText("Press Enter to Select", 310, 650);
 		
 		//  continue button
 		this.game.ctx.fillStyle = "#6AE1F5";
@@ -124,7 +134,7 @@ GameShop.prototype.draw = function () {
 									this.game.continueButton.height, 5, true, true);
 		this.game.ctx.fillStyle = "#DAFEFF";
 		this.game.ctx.font = "25px Verdana";
-		this.game.ctx.fillText("CONTINUE", 342, 600);
+		this.game.ctx.fillText("CONTINUE", 342, 375);
 		Entity.prototype.draw.call(this);
 	}
 }
@@ -322,7 +332,7 @@ function ContinueButton(x, y, width, height) {
 }
 
 ContinueButton.prototype.isClick = function(pos) {
-    soundShopTheme.stop();
+    
 	return pos.x > this.x && pos.x < this.x+this.width && pos.y < this.y+this.height && pos.y > this.y;
 }
 
