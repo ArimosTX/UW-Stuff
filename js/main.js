@@ -17,13 +17,19 @@ var heroCheckPoint = {
 	coins: 0,
 	score: 0,
 	specials: [],
+	weapons: [],
+	ammoDouble: 0,
+	ammoThreeWay: 0,
 	airstrikes: 0,
-	grenades: 0
+	grenades: 0,
+	weaponsIndex: 0,
+	specialsIndex: 0
 };
 
 
 function Sound(src) {
     this.sound = document.createElement("audio");
+	
     this.sound.src = src;
     this.sound.setAttribute("preload", "auto");
     this.sound.setAttribute("controls", "none");
@@ -48,27 +54,67 @@ soundShopTheme.sound.volume = 0.4;
 var soundGameOver = new Sound("audio/gameover.mp3");
 
 function dropPowerUp(entity) {
-	if (entity.powerUpType === "shield") {
-		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/shield.png"), entity.x, entity.boundingbox.bottom - 38, 256, 256, 0.15, "shield");
+	var type = entity.powerUpType;
+	if (type === "loot") type = this.loot();
+	
+	if (type === "shield") {
+		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/shield.png"), entity.x, entity.boundingbox.bottom - 38, 256, 256, 0.15, "loot");
 		entity.game.addEntity(power);
 		entity.game.powerups.push(power);
-	} else if (entity.powerUpType === "health") {
+	} else if (type === "double") {
+		power = new PowerUp(entity.game, AM.getAsset("./img/bullet2.png"), entity.x, entity.boundingbox.bottom - 35, 14, 14, 2.5, "double");
+		entity.game.addEntity(power);
+		entity.game.powerups.push(power);
+	} else if (type === "three-way") {
+		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/three-way.png"), entity.x, entity.boundingbox.bottom - 34, 27, 19, 1.8, "three-way");
+		entity.game.addEntity(power);
+		entity.game.powerups.push(power);
+	} else if (type === "health") {
 		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/health.png"), entity.x, entity.boundingbox.bottom - 35, 494, 443, 0.08, "health");
 		entity.game.addEntity(power);
 		entity.game.powerups.push(power);
-	} else if (entity.powerUpType === "coin") {
+	} else if (type === "coin") {
 		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/coin.png"), entity.x, entity.boundingbox.bottom - 35, 494, 496, 0.07, "coin");
 		entity.game.addEntity(power);
 		entity.game.powerups.push(power);
-	} else if (entity.powerUpType === "airstrike") {
+	} else if (type === "airstrike") {
 		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/jet.png"), entity.x, entity.boundingbox.bottom - (0.08 * 333), 825, 333, .08, "airstrike");
 		entity.game.addEntity(power);
 		entity.game.powerups.push(power);	
-	} else if (entity.powerUpType === "exit") {
+	} else if (type === "exit") {
 		power = new PowerUp(entity.game, AM.getAsset("./img/PowerUp/exit.png"), entity.exitX, entity.exitY, 128, 128, 1, "exit");
 		entity.game.addEntity(power);
 		entity.game.powerups.push(power);
+		
 	}
+}
+
+function loot() {
+	var chance = Math.random();
+	var loot = "";	
+	var valid = false;
+	
+	while (valid === false) {
+		valid = true;
+		// health
+		if (chance <= .33) {
+			loot = "health";
+			
+			// if full health reroll
+			if (gameEngine.Hero.health === gameEngine.Hero.maxHealth) {
+				valid = false;
+				chance = Math.random();
+			}
+		// double
+		} else if (chance > .33 && chance <= .66) {
+			loot = "double";
+		// three-way
+		} else {
+			loot = "three-way";
+		}
+	}
+
+	return loot;
 }
 	
 function Animation(spriteSheet, frameWidth, frameHeight, sheetWidth, frameDuration, frames, loop, scale) {
@@ -185,7 +231,10 @@ AM.queueDownload("./img/L2Background.png");
 AM.queueDownload("./img/enemies.png");
 AM.queueDownload("./img/woods.png");
 AM.queueDownload("./img/Boss2.png");
+AM.queueDownload("./img/flag.png");
+AM.queueDownload("./img/orbs.png");
 AM.queueDownload("./img/bat.png");
+
 
 // powerups
 AM.queueDownload("./img/PowerUp/health.png");
@@ -196,6 +245,7 @@ AM.queueDownload("./img/PowerUp/grenade.png");
 AM.queueDownload("./img/PowerUp/exit.png");
 AM.queueDownload("./img/PowerUp/jet.png");
 AM.queueDownload("./img/PowerUp/missile.png");
+AM.queueDownload("./img/PowerUp/three-way.png");
 
 
 AM.downloadAll(function () {
@@ -224,14 +274,15 @@ AM.downloadAll(function () {
 	var settingButton = new SettingButton(320, 340, 150, 30);
 	var creditButton = new CreditButton(320, 380, 150, 30);
 	var gobackButton = new GoBackButton(350, 400, 100, 30);
-	var playAgainButton = new PlayAgainButton(350, 300, 150, 35);
+	// var playAgainButton = new PlayAgainButton(350, 300, 150, 35);
+
 	var continueButton = new ContinueButton(335, 350, 150, 35);
 	
 	gameEngine.playButton = playButton;
 	gameEngine.settingButton = settingButton;
 	gameEngine.creditButton = creditButton;
 	gameEngine.gobackButton = gobackButton;
-	gameEngine.playAgainButton = playAgainButton;
+	// gameEngine.playAgainButton = playAgainButton;
 	gameEngine.continueButton = continueButton;
 	
 	
@@ -242,7 +293,7 @@ AM.downloadAll(function () {
 	// gameEngine.createLevelOneMap();
 	gameEngine.createHero();	
 	gameShop = new GameShop(gameEngine, AM.getAsset("./img/pointer.png"));
-	gameMenu = new GameMenu(gameEngine);
+	gameMenu = new GameMenu(gameEngine, AM.getAsset("./img/pointer.png"));
 	gameEngine.addEntity(gameShop);
 	gameEngine.addEntity(gameMenu);
 	
@@ -267,8 +318,6 @@ function loadCheckPoint() {
 	}
 	
 	if (!gameEngine.checkPoint) {
-		if (gameEngine.level === 1) {
-			// remove platforms and monsters and reload
 			gameEngine.monsters.splice(0, gameEngine.monsters.length);
 			gameEngine.platforms.splice(0, gameEngine.platforms.length);
 			gameEngine.powerups.splice(0, gameEngine.powerups.length);
@@ -276,34 +325,56 @@ function loadCheckPoint() {
 			gameEngine.Hero = hero;
 			gameEngine.Hero.x = 200;
 			gameEngine.Hero.y = 0;
+			gameEngine.Hero.falling = true;
 			gameEngine.Hero.coins = heroCheckPoint.coins;
-			gameEngine.Hero.specials = heroCheckPoint.specials;
+			gameEngine.Hero.weaponsIndex = heroCheckPoint.weaponsIndex;
+			gameEngine.Hero.specialsIndex = heroCheckPoint.specialsIndex;
+			gameEngine.Hero.specials = Array.from(heroCheckPoint.specials);
+			gameEngine.Hero.ammoDouble = heroCheckPoint.ammoDouble;
+			gameEngine.Hero.ammoThreeWay = heroCheckPoint.ammoThreeWay;
+			gameEngine.Hero.weapons = Array.from(heroCheckPoint.weapons);
 			gameEngine.Hero.airstrikes = heroCheckPoint.airstrikes;
 			gameEngine.Hero.grenades = heroCheckPoint.grenades;
-			gameEngine.Hero.score = heroCheckPoint.score; 
+			gameEngine.Hero.score = heroCheckPoint.score;
+		if (gameEngine.level === 1) {
+			// remove platforms and monsters and reload
+			
 			gameEngine.loadLevelOne();
 			
 			// alert(gameEngine.Hero.specials.length);
+		} else if (gameEngine.level === 2) {
+			// load check point for level two
+			
+			gameEngine.loadLevelTwo();
+			gameEngine.addEntity(gameEngine.Hero);
 		}
 	} else {
-		
-		if (gameEngine.level === 1) {
-			
 			hero.x = heroCheckPoint.x;
 			hero.y = 0;
 			hero.coins = heroCheckPoint.coins;
-			hero.specials = heroCheckPoint.specials;
+			hero.specials =  Array.from(heroCheckPoint.specials);
 			hero.airstrikes = heroCheckPoint.airstrikes;
-			hero.grenades = heroCheckPoint.grenades;
+			hero.grenades =heroCheckPoint.grenades;
 			hero.score = heroCheckPoint.score; 
+			hero.ammoDouble = heroCheckPoint.ammoDouble;
+			hero.ammoThreeWay = heroCheckPoint.ammoThreeWay;
+			hero.weapons = Array.from(heroCheckPoint.weapons);
 			hero.falling = true;
-			
 			Camera.x = heroCheckPoint.cameraX;
+			
+		
+		if (gameEngine.level === 1) {
+		
 			gameEngine.createLevelOneMap();
 			gameEngine.loadLevelOneCheckPoint();
-			gameEngine.Hero = hero;
-			gameEngine.addEntity(gameEngine.Hero);
+			
+		} else if (this.gameEngine.level === 2) {
+		
+			gameEngine.createLevelTwoMap();
+			gameEngine.loadLevelTwoCheckPoint();
 		}
+		gameEngine.Hero = hero;
+		gameEngine.addEntity(gameEngine.Hero);
 	}
 	
 	alert("Loading CheckPoint");
@@ -325,17 +396,17 @@ function startGame() {
 
 		gameEngine.loadLevelOne();
 	} else {
-			
-
-			for (var i = 0; i < gameEngine.entities.length; i++) {
-				var entity = gameEngine.entities[i];
-				if (entity instanceof Soldier || 
-					entity instanceof GameMenu ||
-					entity instanceof GameShop) {
-						continue;
-				}
-				gameEngine.entities.splice(i, 1);
+		
+		saveHeroData()
+		for (var i = 0; i < gameEngine.entities.length; i++) {
+			var entity = gameEngine.entities[i];
+			if (entity instanceof Soldier || 
+				entity instanceof GameMenu ||
+				entity instanceof GameShop) {
+					continue;
 			}
+			gameEngine.entities.splice(i, 1);
+		}
 			
 		gameEngine.loadLevelTwo();
 		var hero;
@@ -358,17 +429,29 @@ function startGame() {
 }
 
 
+function saveHeroData() {
+	heroCheckPoint.x = gameEngine.Hero.x;
+	heroCheckPoint.y = gameEngine.Hero.y;
+	heroCheckPoint.cameraX = Camera.x;
+	heroCheckPoint.coins = gameEngine.coins;
+	heroCheckPoint.score = gameEngine.score;
+	heroCheckPoint.specials = Array.from(gameEngine.Hero.specials);
+	heroCheckPoint.airstrikes = gameEngine.Hero.airstrikes;
+	heroCheckPoint.grenades = gameEngine.Hero.grenades;
+	heroCheckPoint.weapons = Array.from(gameEngine.Hero.weapons);
+	heroCheckPoint.ammoDouble = gameEngine.Hero.ammoDouble;
+	heroCheckPoint.ammoThreeWay = gameEngine.Hero.ammoThreeWay;
+}
+
 function resetGame() {
 	// alert(gameEngine.shop + " "  + gameEngine.endLevel + " "  + gameEngine.gameOver);
 	if (!gameEngine.shop && !gameEngine.gameOver && !gameEngine.endLevel) {
 		gameEngine.Hero.reset();
 		Camera.x = 0;
 	} else if (gameEngine.gameOver) {
-		// alert("in game over");
 		gameEngine.createHero();
 		
 	} else if (gameEngine.endLevel) {
-		// alert("in end level");
 		gameEngine.Hero.x = 200;
 		gameEngine.Hero.y = 0;
 		gameEngine.checkPoint = false;
@@ -379,6 +462,7 @@ function resetGame() {
 	
 	gameEngine.monsters.splice(0, gameEngine.monsters.length);
 	gameEngine.platforms.splice(0, gameEngine.platforms.length);
+	gameEngine.bulletsBad.splice(0, gameEngine.bulletsBad.length);
 			
 	
 	for (var i = 0; i < gameEngine.entities.length; i++) {
@@ -391,6 +475,18 @@ function resetGame() {
 		// entity.removeFromWorld = true;
 		gameEngine.entities[i].removeFromWorld = true;
 	}
+	
+}
+
+function resetHeroCheckPoint() {
+	heroCheckPoint.x = 200;
+	heroCheckPoint.y = 0;
+	heroCheckPoint.cameraX = 0;
+	heroCheckPoint.coins =  gameEngine.Hero.coins;
+	heroCheckPoint.score = gameEngine.Hero.score;
+	heroCheckPoint.specials =  gameEngine.Hero.specials;
+	heroCheckPoint.airstrikes =  gameEngine.Hero.airstrikes;
+	heroCheckPoint.grenades =  gameEngine.Hero.grenades;
 	
 }
 
@@ -411,40 +507,56 @@ function startInput() {
 		
 		var rect = gameEngine.ctx.canvas.getBoundingClientRect();
 		var pos = {x : event.clientX - rect.left, y : event.clientY - rect.top};
-		if (!gameEngine.startGame && !gameEngine.showSetting && !gameEngine.showCredit) {
-			if (gameEngine.playButton.isClick(pos)) {
+		if ((!gameEngine.startGame || gameEngine.gameOver) && !gameEngine.showSetting && !gameEngine.showCredit) {
+			if (gameEngine.playButton.isClick(pos) && !gameEngine.gameOver) {
 				startGame();
 				gameEngine.startGame = true;
 				gameEngine.showSetting = false;
 				gameEngine.showCredit = false;
-			} 
+			}  else if (gameEngine.playButton.isClick(pos) && gameEngine.gameOver) {
+				Camera.x = 0;
+				gameEngine.startGame = true;
+				resetGame();
+				gameEngine.gameOver = false;
+				startGame();
+			}
 		} 
 		
-		if (!gameEngine.startGame && !gameEngine.showCredit && gameEngine.settingButton.isClick(pos)) {
+		if ( !gameEngine.showCredit && gameEngine.settingButton.isClick(pos)) {
+				
 				gameEngine.showSetting = true;
+				gameMenu.pointerY = 280;
+				gameMenu.pointerX = 100;
+				gameMenu.basey = gameMenu.pointerY;
 		}
 		
 				
-		if (!gameEngine.startGame && gameEngine.creditButton.isClick(pos)) {
+		if ( gameEngine.creditButton.isClick(pos)) {
 			gameEngine.showCredit = true;
+			gameMenu.pointerY = 280;
+			gameMenu.pointerX = 100;
+			gameMenu.basey = gameMenu.pointerY;
 		}
 		
-		if (!gameEngine.startGame && gameEngine.gobackButton.isClick(pos)) {
+		if (gameEngine.gobackButton.isClick(pos)) {
 			gameEngine.showSetting = false;
 			gameEngine.startGame = false;
 			gameEngine.showCredit = false;
+			gameMenu.resetPointerPos();
 		}
 	
-		if (gameEngine.gameOver && gameEngine.playAgainButton.isClick(pos)) {
-			// gameEngine.restartGame = true;
-			Camera.x = 0;
-			gameEngine.startGame = true;
-			resetGame();
-			gameEngine.gameOver = false;
-			startGame();
-		}
+		// if (gameEngine.gameOver && gameEngine.playAgainButton.isClick(pos)) {
+			// // gameEngine.restartGame = true;
+			// Camera.x = 0;
+			// gameEngine.startGame = true;
+			// resetGame();
+			// gameEngine.gameOver = false;
+			// startGame();
+		// }
 		
 		if (gameEngine.shop && gameEngine.continueButton.isClick(pos)) {
+			gameShop.pointerY = gameShop.boundedTop;
+			// saveHeroData();
 			nextLevel();
 		}
 		
@@ -465,7 +577,7 @@ function startInput() {
 					gameShop.moveDown = true;
 
 					break;
-				case 38:
+				case 38: // up
 					gameShop.moveUp = true;
 					break;
 				case 13: // purchase item
@@ -476,6 +588,31 @@ function startInput() {
 					break;
 			}
 			
+		} else if ((!gameEngine.startGame || gameEngine.gameOver) && !gameEngine.showSetting && !gameEngine.showCredit) {
+			// alert("hi");
+			switch(e.keyCode) {
+				// Down
+				case 40:
+					gameMenu.moveDown = true;
+					break;
+				case 38: // up
+					gameMenu.moveUp = true;
+					break;
+				case 13: // purchase item
+					
+					gameMenu.select();
+					
+						
+					break;
+			}
+		} else if (gameEngine.showSetting || gameEngine.showCredit) {
+			switch(e.keyCode) {
+				case 13: // purchase item
+					
+					gameMenu.select();
+						
+					break;
+			}
 		} else {
 			switch(e.keyCode) {
 			// Spacebar
@@ -611,9 +748,9 @@ function startInput() {
 			// "/" cheat code: warp
 			case 190:
 				if (gameEngine.level === 1) {
-					gameEngine.Hero.x = 7000;
+					gameEngine.Hero.x = 6500;
 					gameEngine.Hero.y = 200;
-					Camera.x = 6600;
+					Camera.x = 6100;
 				} else if (gameEngine.level === 2) {
 					gameEngine.Hero.x = 10000;
 					gameEngine.Hero.y = 100;
