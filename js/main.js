@@ -47,6 +47,7 @@ function Sound(src) {
 var levelSong = {
 	"level1": "audio/track_1.wav",
 	"level2": "audio/track_2.mp3",
+	"level3": "audio/track_3.mp3",
 };
 
 var soundSong;
@@ -237,6 +238,7 @@ AM.queueDownload("./img/woods.png");
 AM.queueDownload("./img/Boss2.png");
 AM.queueDownload("./img/flag.png");
 AM.queueDownload("./img/orbs.png");
+AM.queueDownload("./img/LabTiles.png");
 AM.queueDownload("./img/bat.png");
 
 
@@ -271,6 +273,7 @@ AM.downloadAll(function () {
 	gameEngine.shop = false;
 	gameEngine.done = false;
 	gameEngine.endLevel = false;
+	gameEngine.gameWon = false;
 	
 	gameEngine.level = 1;
 	
@@ -353,8 +356,8 @@ function loadCheckPoint() {
 			gameEngine.loadLevelTwo();
 			gameEngine.addEntity(gameEngine.Hero);
 		} else if (gameEngine.level === 3) { // uncomment this
-			// gameEngine.loadLevelThree();
-			// gameEngine.addEntity(gameEngine.Hero);
+			 gameEngine.loadLevelThree();
+			 gameEngine.addEntity(gameEngine.Hero);
 		}
 	} else {
 			hero.x = heroCheckPoint.x;
@@ -381,8 +384,8 @@ function loadCheckPoint() {
 			gameEngine.createLevelTwoMap();
 			gameEngine.loadLevelTwoCheckPoint();
 		} else if (gameEngine.level === 3) { // uncomment this
-			// gameEngine.createLevelThreeMap();
-			// gameEngine.loadLevelThreeCheckPoint();
+			 gameEngine.createLevelThreeMap();
+			 gameEngine.loadLevelThreeCheckPoint();
 		}
 		
 		gameEngine.Hero = hero;
@@ -398,10 +401,9 @@ function loadCheckPoint() {
 function startGame() {
 	// set Camera max for lock
 	if (gameEngine.level === 1) Camera.max = 7400;
-	else if (gameEngine.level === 2) {
-		Camera.max = 10750;
-		// soundSong.play();
-	}
+	else if (gameEngine.level === 2) Camera.max = 10750;
+	else if (gameEngine.level === 3) Camera.max = 12150;
+	
 	
 	Camera.lock = false;
 	if (gameEngine.level === 1) {
@@ -436,32 +438,32 @@ function startGame() {
 			gameEngine.addEntity(gameEngine.Hero);
 		} else gameEngine.addEntity(gameEngine.Hero);
 	} else if (gameEngine.level === 3) { // uncomment the codes when you are done implementing
-		// saveHeroData()
-		// for (var i = 0; i < gameEngine.entities.length; i++) {
-			// var entity = gameEngine.entities[i];
-			// if (entity instanceof Soldier || 
-				// entity instanceof GameMenu ||
-				// entity instanceof GameShop) {
-					// continue;
-			// }
-			// gameEngine.entities.splice(i, 1);
-		// }
+		saveHeroData()
+		for (var i = 0; i < gameEngine.entities.length; i++) {
+			var entity = gameEngine.entities[i];
+			if (entity instanceof Soldier || 
+				entity instanceof GameMenu ||
+				entity instanceof GameShop) {
+					continue;
+			}
+			gameEngine.entities.splice(i, 1);
+		}
 			
-		// gameEngine.loadLevelThree();
-		// var hero;
-		// var hasHero = false;
-		// for (var i = 0; i < gameEngine.entities.length; i++) {
-			// var entity = gameEngine.entities[i];
-			// if (entity instanceof Soldier) {
-				// hero = gameEngine.entities.splice(i, 1)[0];
-				// hasHero = true;
-				// break;
-			// }
-		// }
-		// if (hasHero) {
-			// gameEngine.Hero = hero;
-			// gameEngine.addEntity(gameEngine.Hero);
-		// } else gameEngine.addEntity(gameEngine.Hero);
+		gameEngine.loadLevelThree();
+		var hero;
+		var hasHero = false;
+		for (var i = 0; i < gameEngine.entities.length; i++) {
+			var entity = gameEngine.entities[i];
+			if (entity instanceof Soldier) {
+				hero = gameEngine.entities.splice(i, 1)[0];
+				hasHero = true;
+				break;
+			}
+		}
+		if (hasHero) {
+			gameEngine.Hero = hero;
+			gameEngine.addEntity(gameEngine.Hero);
+		} else gameEngine.addEntity(gameEngine.Hero);
 	}
 	
 
@@ -484,10 +486,10 @@ function saveHeroData() {
 
 function resetGame() {
 	
-	if (!gameEngine.shop && !gameEngine.gameOver && !gameEngine.endLevel) {
+	if (!gameEngine.shop && !gameEngine.gameOver && !gameEngine.endLevel && !gameEngine.gameWon) {
 		gameEngine.Hero.reset();
 		Camera.x = 0;
-	} else if (gameEngine.gameOver) {
+	} else if (gameEngine.gameOver || gameEngine.gameWon) {
 		gameEngine.createHero();
 		
 	} else if (gameEngine.endLevel) {
@@ -549,7 +551,7 @@ function startInput() {
 		
 		var rect = gameEngine.ctx.canvas.getBoundingClientRect();
 		var pos = {x : event.clientX - rect.left, y : event.clientY - rect.top};
-		if ((!gameEngine.startGame || gameEngine.gameOver) && !gameEngine.showSetting && !gameEngine.showCredit) {
+		if ((!gameEngine.startGame || gameEngine.gameOver || gameEngine.gameWon) && !gameEngine.showSetting && !gameEngine.showCredit) {
 			if (gameEngine.playButton.isClick(pos) && !gameEngine.gameOver) {
 				startGame();
 				gameEngine.startGame = true;
@@ -564,7 +566,7 @@ function startInput() {
 			}
 		} 
 		
-		if ( !gameEngine.showCredit && gameEngine.settingButton.isClick(pos)) {
+		if (!gameEngine.showCredit && gameEngine.settingButton.isClick(pos)) {
 				
 				gameEngine.showSetting = true;
 				gameMenu.pointerY = 280;
@@ -573,7 +575,7 @@ function startInput() {
 		}
 		
 				
-		if ( gameEngine.creditButton.isClick(pos)) {
+		if (gameEngine.creditButton.isClick(pos)) {
 			gameEngine.showCredit = true;
 			gameMenu.pointerY = 280;
 			gameMenu.pointerX = 100;
@@ -587,14 +589,6 @@ function startInput() {
 			gameMenu.resetPointerPos();
 		}
 	
-		// if (gameEngine.gameOver && gameEngine.playAgainButton.isClick(pos)) {
-			// // gameEngine.restartGame = true;
-			// Camera.x = 0;
-			// gameEngine.startGame = true;
-			// resetGame();
-			// gameEngine.gameOver = false;
-			// startGame();
-		// }
 		
 		if (gameEngine.shop && gameEngine.continueButton.isClick(pos)) {
 			gameShop.pointerY = gameShop.boundedTop;
@@ -630,7 +624,7 @@ function startInput() {
 					break;
 			}
 			
-		} else if ((!gameEngine.startGame || gameEngine.gameOver) && !gameEngine.showSetting && !gameEngine.showCredit) {
+		} else if ((!gameEngine.startGame || gameEngine.gameOver || gameEngine.gameWon) && !gameEngine.showSetting && !gameEngine.showCredit) {
 			// alert("hi");
 			switch(e.keyCode) {
 				// Down

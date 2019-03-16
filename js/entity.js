@@ -350,20 +350,41 @@ Waterfall.prototype.draw = function () {
 //*****************************************************************************************************************
 
 
-
 /*
-Platforms
+Tile Platform
 */
-function Platform(game, spritesheet, x, y, width, height, numberOfPlatforms) {
+function Platform(game, spritesheet, sourceXTopLeft, sourceYTopLeft, sourceXTopMid, sourceYTopMid, sourceXTopRight, sourceYTopRight,
+    sourceXLeft, sourceYLeft, sourceXMid, sourceYMid, sourceXRight, sourceYRight, x, y, width, height, numberOfTiles, numberOfTilesY) {
     this.ctx = game.ctx;
+	this.game = game;
     this.spritesheet = spritesheet;
     this.width = width;
     this.height = height;
-	this.numberOfPlatforms = numberOfPlatforms;
+	this.numberOfTiles = numberOfTiles;
+	this.numberOfTilesY = numberOfTilesY;
     this.x = x;
     this.y = y;
-    this.boundingbox = new BoundingBox(x, y+4, width*numberOfPlatforms, height-25);
-    Entity.call(this, game, x, y, width, height);
+    this.sourceXTopLeft = sourceXTopLeft;
+    this.sourceYTopLeft = sourceYTopLeft;
+    this.sourceXTopMid = sourceXTopMid;
+    this.sourceYTopMid = sourceYTopMid;
+    this.sourceXTopRight = sourceXTopRight;
+    this.sourceYTopRight = sourceYTopRight;
+	this.sourceXLeft = sourceXLeft;
+	this.sourceYLeft = sourceYLeft;
+	this.sourceXMid = sourceXMid;
+	this.sourceYMid = sourceYMid;
+	this.sourceXRight = sourceXRight;
+	this.sourceYRight = sourceYRight;
+	// this.sourceXBotLeft = sourceXBotLeft;
+	// this.sourceYBotLeft = sourceYBotLeft;
+	// this.sourceXBotMid = sourceXBotMid;
+	// this.sourceYBotMid = sourceYBotMid;
+	// this.sourceXBotRight = sourceXBotRight;
+	// this.sourceYBotRight = sourceYBotRight;
+    this.boundingbox = new BoundingBox(x, y, width*numberOfTiles, height);
+    Entity.call(game, spritesheet, sourceXTopLeft, sourceYTopLeft, sourceXTopMid, sourceYTopMid, sourceXTopRight, sourceYTopRight,
+    sourceXLeft, sourceYLeft, sourceXMid, sourceYMid, sourceXRight, sourceYRight, x, y, width, height, numberOfTiles,numberOfTilesY);
 }
 
 Platform.prototype = new Entity();
@@ -371,16 +392,78 @@ Platform.prototype.constructor = Platform;
 
 Platform.prototype.draw = function () {
 	
-	for (var i = 0; i < this.numberOfPlatforms; i++) {
-		this.ctx.drawImage(this.spritesheet, this.x - Camera.x + (this.width*i), this.y);	
-	}
+    for (var y = 0; y < (this.numberOfTilesY*this.height); y+=this.height) {
+        for (var i=0; i < this.numberOfTiles; i++) {
+            if (i === 0) {
+                if (y === 0) {
+                    this.ctx.drawImage(this.spritesheet,
+                        this.sourceXTopLeft, this.sourceYTopLeft,  // source from sheet
+                        this.width, this.height,
+                        this.x - Camera.x, this.y + y,
+                        this.width, this.height);
+                } else {
+                    this.ctx.drawImage(this.spritesheet,
+                        this.sourceXLeft, this.sourceYLeft,  // source from sheet
+                        this.width, this.height,
+                        this.x - Camera.x, this.y + y,
+                        this.width, this.height);
+                }                
+            } else if (i < this.numberOfTiles - 1) {
+                if (y === 0) {
+                    this.ctx.drawImage(this.spritesheet,
+                     this.sourceXTopMid, this.sourceYTopMid,  // source from sheet
+                     this.width, this.height,
+                     this.x + (i * this.width) - Camera.x, this.y + y,
+                     this.width, this.height);
+                } else {
+                    this.ctx.drawImage(this.spritesheet,
+                     this.sourceXMid, this.sourceYMid,  // source from sheet
+                     this.width, this.height,
+                     this.x + (i * this.width) - Camera.x, this.y + y,
+                     this.width, this.height);
+                }               
+            } else {
+                if (y === 0) {
+                    this.ctx.drawImage(this.spritesheet,
+                     this.sourceXTopRight, this.sourceYTopRight,  // source from sheet
+                     this.width, this.height,
+                     this.x + (i * this.width) - Camera.x, this.y + y,
+                     this.width, this.height);
+                } 	else {
+                    this.ctx.drawImage(this.spritesheet,
+                     this.sourceXRight, this.sourceYRight,  // source from sheet
+                     this.width, this.height,
+                     this.x + (i * this.width) - Camera.x, this.y + y,
+                     this.width, this.height);
+                }
+                
+            }	
+			
+			// else if (y === (this.numberOfTilesY-1)*this.height) {
+					// this.ctx.drawImage(this.spritesheet,
+                        // this.sourceXBotLeft, this.sourceYBotLeft,  // source from sheet
+                        // this.width, this.height,
+                        // this.x - Camera.x, this.y + y,
+                        // this.width, this.height);
+				// }
+        }
+    }
     
+	
+	 if (DEBUG) {
+        this.ctx.strokeStyle = "red";
+        this.ctx.strokeRect(this.boundingbox.left - Camera.x, this.boundingbox.top, this.width*this.numberOfTiles, this.boundingbox.height);
+		
+        this.ctx.strokeStyle = "green";
+        this.ctx.strokeRect(this.x - Camera.x, this.y, this.width, this.height);
+    }
+
+	
     Entity.prototype.draw.call(this);
 }
 Platform.prototype.update = function () {
     Entity.prototype.update.call(this);
 }
-
 
 /*
 PowerUp
@@ -580,14 +663,27 @@ PowerUp.prototype.update = function () {
 			this.soundExit.play();
 			this.removeFromWorld = true;
 			this.game.level++;
-			resetHeroCheckPoint();
-			this.game.Hero.visible = false;
-			this.game.shop = true;
-			this.game.checkPoint = false;
-			this.game.endLevel = true;
-			soundSong.stop();
-			soundShopTheme.play();
-			resetGame();
+			if (this.game.level > 3) {  // game won code
+				this.game.gameWon = true;
+				this.game.shop = false;
+				this.game.Hero.visible = false;
+				this.game.checkPoint = false;
+				this.game.level = 1;
+				if (soundSong) soundSong.stop();
+				resetHeroCheckPoint();
+				resetGame();
+				
+			} else {
+				resetHeroCheckPoint();
+				this.game.Hero.visible = false;
+				this.game.shop = true;
+				this.game.checkPoint = false;
+				this.game.endLevel = true;
+				soundSong.stop();
+				soundShopTheme.play();
+				resetGame();
+				
+			}
 			
 		}
 		else if (this.type === "checkpoint") {
@@ -1073,7 +1169,7 @@ function AimCannonball(game, x, y, direction) {
 	this.direction = direction;
 	this.hit = false;
 	this.sound = new Sound("audio/cannon.wav");
-	this.sound.play();
+	if (this.x > Camera.x && this.x < Camera.x + 900) this.sound.play();
 	this.boundingbox = new BoundingBox(this.x, this.y, this.width, this.height);
     Entity.call(this, game, this.x, this.y);
 }
@@ -1149,7 +1245,7 @@ AimCannonball.prototype.update = function () {
 		this.boundingbox = new BoundingBox(this.x, this.y, this.width, this.height);
 		
 		var distance = Math.abs(this.x - this.startX);
-		if (distance > 900) {
+		if (distance > 600) {
 			if (DEBUG) console.log("Cannonball removed.");	
 			for( var i = 0; i < this.game.bulletsBad.length; i++){ 
 				if ( this.game.bulletsBad[i] === this) {
@@ -2814,7 +2910,7 @@ function Cannonball(game, x, y, direction) {
 	this.direction = direction;
 	this.hit = false;
 	this.sound = new Sound("audio/cannon.wav");
-	this.sound.play();
+	if (this.x > Camera.x && this.x < Camera.x + 900) this.sound.play();
 	this.boundingbox = new BoundingBox(this.x, this.y, this.width, this.height);
     Entity.call(this, game, this.x, this.y);
 }
