@@ -431,7 +431,7 @@ GameMenu.prototype.draw = function() {
 		// D: swap special
 		
 		this.ctx.fillStyle = "#000000";
-		roundRect(this.ctx, this.game.gobackButton.x, this.game.gobackButton.y, this.game.gobackButton.width, 
+		roundRect(this.ctx, this.game.gobackButton.x, 430, this.game.gobackButton.width, 
 									this.game.gobackButton.height, 5, true, true);
 		this.ctx.font = "20px Verdana";
 		this.ctx.fillStyle = "#FFFFFF";
@@ -442,9 +442,13 @@ GameMenu.prototype.draw = function() {
 		roundRect(this.ctx, 220, 200, 350, 250, 5, true, true);
 		this.ctx.fillStyle = "#0a0a0a";
 		this.ctx.font = "15px Verdana";
-		this.ctx.fillText("Tommy: Developer", 310, 230);
-		this.ctx.fillText("Vecheka: Developer", 310, 280);
-		this.ctx.fillText("Huy: Developer", 310, 330);
+		this.ctx.fillText("Blue Three:", 310, 230);
+		this.ctx.fillText("Developer: Tommy Pham", 310, 250);
+		this.ctx.fillText("Developer: Vechecka Chhourn", 310, 270);
+		this.ctx.fillText("Developer: Minh-Huy Tran", 310, 290);
+		this.ctx.fillText("Thanks to: ", 310, 340);
+		this.ctx.fillText("Chris Marriott Ph.D.", 310, 360);
+		this.ctx.fillText("Master484 for art ", 310, 380);
 	
 		this.ctx.fillStyle = "#000000";
 		roundRect(this.ctx, this.game.gobackButton.x, this.game.gobackButton.y, this.game.gobackButton.width, 
