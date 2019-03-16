@@ -703,6 +703,9 @@ GameEngine.prototype.createLevelThreeMonsters = function() {
 	
 	monster = new AimTurret(gameEngine, AM.getAsset("./img/enemies.png"), 10650, 100, 47, 30, false, "");
 	this.addMonsters(monster);	
+	
+	var Boss = new Boss3(gameEngine, AM.getAsset("./img/Boss3.png"), 12080, 370, 87, 110, 1.2, true, "exit");
+	this.addMonsters(Boss);
 }
 
 /** Load level 3 */
@@ -736,6 +739,9 @@ GameEngine.prototype.loadLevelThreeCheckPoint = function() {
 	
 	monster = new AimTurret(gameEngine, AM.getAsset("./img/enemies.png"), 10650, 100, 47, 30, false, "");
 	this.addMonsters(monster);	
+	
+	var Boss = new Boss3(gameEngine, AM.getAsset("./img/Boss3.png"), 12080, 370, 87, 110, 1.2, true, "exit");
+	this.addMonsters(Boss);
 }
 
 function Timer() {
