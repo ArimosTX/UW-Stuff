@@ -17,7 +17,7 @@ var heroCheckPoint = {
 	coins: 0,
 	score: 0,
 	specials: [],
-	weapons: [],
+	weapons: ["basic"],
 	ammoDouble: 0,
 	ammoThreeWay: 0,
 	airstrikes: 0,
@@ -280,7 +280,7 @@ AM.downloadAll(function () {
 	var gobackButton = new GoBackButton(350, 400, 100, 30);
 	// var playAgainButton = new PlayAgainButton(350, 300, 150, 35);
 
-	var continueButton = new ContinueButton(335, 350, 150, 35);
+	var continueButton = new ContinueButton(335, 390, 150, 35);
 	
 	gameEngine.playButton = playButton;
 	gameEngine.settingButton = settingButton;
@@ -324,7 +324,10 @@ function loadCheckPoint() {
 	if (!gameEngine.checkPoint) {
 			gameEngine.monsters.splice(0, gameEngine.monsters.length);
 			gameEngine.platforms.splice(0, gameEngine.platforms.length);
+			gameEngine.movplatforms.splice(0, gameEngine.movplatforms.length);
 			gameEngine.powerups.splice(0, gameEngine.powerups.length);
+			gameEngine.bulletsBad.splice(0, gameEngine.bulletsBad.length);
+			// alert(heroCheckPoint.weapons);
 			Camera.x = heroCheckPoint.cameraX;
 			gameEngine.Hero = hero;
 			gameEngine.Hero.x = 200;
@@ -342,15 +345,16 @@ function loadCheckPoint() {
 			gameEngine.Hero.score = heroCheckPoint.score;
 		if (gameEngine.level === 1) {
 			// remove platforms and monsters and reload
-			
 			gameEngine.loadLevelOne();
 			
-			// alert(gameEngine.Hero.specials.length);
 		} else if (gameEngine.level === 2) {
 			// load check point for level two
 			
 			gameEngine.loadLevelTwo();
 			gameEngine.addEntity(gameEngine.Hero);
+		} else if (gameEngine.level === 3) { // uncomment this
+			// gameEngine.loadLevelThree();
+			// gameEngine.addEntity(gameEngine.Hero);
 		}
 	} else {
 			hero.x = heroCheckPoint.x;
@@ -372,16 +376,20 @@ function loadCheckPoint() {
 			gameEngine.createLevelOneMap();
 			gameEngine.loadLevelOneCheckPoint();
 			
-		} else if (this.gameEngine.level === 2) {
+		} else if (gameEngine.level === 2) {
 		
 			gameEngine.createLevelTwoMap();
 			gameEngine.loadLevelTwoCheckPoint();
+		} else if (gameEngine.level === 3) { // uncomment this
+			// gameEngine.createLevelThreeMap();
+			// gameEngine.loadLevelThreeCheckPoint();
 		}
+		
 		gameEngine.Hero = hero;
 		gameEngine.addEntity(gameEngine.Hero);
 	}
 	
-	alert("Loading CheckPoint");
+	// alert("Loading CheckPoint");
 	
 }
 
@@ -399,7 +407,7 @@ function startGame() {
 	if (gameEngine.level === 1) {
 
 		gameEngine.loadLevelOne();
-	} else {
+	} else if (gameEngine.level === 2) {
 		
 		saveHeroData()
 		for (var i = 0; i < gameEngine.entities.length; i++) {
@@ -427,6 +435,33 @@ function startGame() {
 			gameEngine.Hero = hero;
 			gameEngine.addEntity(gameEngine.Hero);
 		} else gameEngine.addEntity(gameEngine.Hero);
+	} else if (gameEngine.level === 3) { // uncomment the codes when you are done implementing
+		// saveHeroData()
+		// for (var i = 0; i < gameEngine.entities.length; i++) {
+			// var entity = gameEngine.entities[i];
+			// if (entity instanceof Soldier || 
+				// entity instanceof GameMenu ||
+				// entity instanceof GameShop) {
+					// continue;
+			// }
+			// gameEngine.entities.splice(i, 1);
+		// }
+			
+		// gameEngine.loadLevelThree();
+		// var hero;
+		// var hasHero = false;
+		// for (var i = 0; i < gameEngine.entities.length; i++) {
+			// var entity = gameEngine.entities[i];
+			// if (entity instanceof Soldier) {
+				// hero = gameEngine.entities.splice(i, 1)[0];
+				// hasHero = true;
+				// break;
+			// }
+		// }
+		// if (hasHero) {
+			// gameEngine.Hero = hero;
+			// gameEngine.addEntity(gameEngine.Hero);
+		// } else gameEngine.addEntity(gameEngine.Hero);
 	}
 	
 
@@ -448,7 +483,7 @@ function saveHeroData() {
 }
 
 function resetGame() {
-	// alert(gameEngine.shop + " "  + gameEngine.endLevel + " "  + gameEngine.gameOver);
+	
 	if (!gameEngine.shop && !gameEngine.gameOver && !gameEngine.endLevel) {
 		gameEngine.Hero.reset();
 		Camera.x = 0;
@@ -466,7 +501,10 @@ function resetGame() {
 	
 	gameEngine.monsters.splice(0, gameEngine.monsters.length);
 	gameEngine.platforms.splice(0, gameEngine.platforms.length);
+	gameEngine.movplatforms.splice(0, gameEngine.movplatforms.length);
 	gameEngine.bulletsBad.splice(0, gameEngine.bulletsBad.length);
+	gameEngine.powerups.splice(0, gameEngine.powerups.length);
+	
 			
 	
 	for (var i = 0; i < gameEngine.entities.length; i++) {
