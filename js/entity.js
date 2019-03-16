@@ -847,7 +847,7 @@ function Turret(game, spritesheet, x, y, width, height, powerUp, powerUpType) {
     this.active = false;
     this.powerUp = powerUp;
     this.powerUpType = powerUpType;
-    this.shooting = true;
+    this.shooting = false;
 	this.soundDeath = new Sound("audio/death-enemy.wav");
     this.boundingbox = new BoundingBox(x, y+20, width, height-20);
     Entity.call(game, spritesheet, x, y, width, height, powerUp, powerUpType);
@@ -966,7 +966,7 @@ function AimTurret(game, spritesheet, x, y, width, height, powerUp, powerUpType)
     this.active = false;
     this.powerUp = powerUp;
     this.powerUpType = powerUpType;
-    this.shooting = false;
+    this.shooting = true;
 	this.soundDeath = new Sound("audio/death-enemy.wav");
     this.boundingbox = new BoundingBox(x, y+20, width, height);
     Entity.call(game, spritesheet, x, y, width, height, powerUp, powerUpType);
