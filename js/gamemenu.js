@@ -448,7 +448,7 @@ GameMenu.prototype.draw = function() {
 		this.ctx.fillText("Developer: Minh-Huy Tran", 310, 290);
 		this.ctx.fillText("Thanks to: ", 310, 340);
 		this.ctx.fillText("Chris Marriott Ph.D.", 310, 360);
-		this.ctx.fillText("Master484 for art ", 310, 380);
+		this.ctx.fillText("Master484 for lots of art ", 310, 380);
 	
 		this.ctx.fillStyle = "#000000";
 		roundRect(this.ctx, this.game.gobackButton.x, this.game.gobackButton.y, this.game.gobackButton.width, 
