@@ -679,8 +679,8 @@ function startInput() {
             case 65:
                 gameEngine.Hero.moving = true;
                 gameEngine.Hero.direction = -1;          
-		left = true;
-		break;
+				left = true;
+				break;
              
             // Up (W)
             case 87:
@@ -691,7 +691,7 @@ function startInput() {
             case 68:
                 gameEngine.Hero.moving = true;
                 gameEngine.Hero.direction = 1;
-		right = true;
+				right = true;
                 break;
 				
 			// Down (S)
@@ -736,13 +736,15 @@ function startInput() {
 			case 65:
 			    left = false;
 			    if (left == false && right == false) gameEngine.Hero.moving = false;
-			    break;
+			    if (right == true) gameEngine.Hero.direction = 1;
+				break;
 			
 			// right
 			case 68:
 			    right = false;
 			    if (left == false && right == false) gameEngine.Hero.moving = false;
-			    break;
+			    if (left == true) gameEngine.Hero.direction = -1;
+				break;
 			
 			//up
 			case 87:
