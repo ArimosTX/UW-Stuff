@@ -2,6 +2,8 @@ var AM = new AssetManager();
 var gameEngine = new GameEngine();
 var gameShop;
 var gameMenu;
+var right = false;
+var left = false;
 // var database = new Database();
 const WINDOW_WIDTH = 800;
 const DEBUG = false;
@@ -677,7 +679,8 @@ function startInput() {
             case 65:
                 gameEngine.Hero.moving = true;
                 gameEngine.Hero.direction = -1;          
-				break;
+		left = true;
+		break;
              
             // Up (W)
             case 87:
@@ -688,6 +691,7 @@ function startInput() {
             case 68:
                 gameEngine.Hero.moving = true;
                 gameEngine.Hero.direction = 1;
+		right = true;
                 break;
 				
 			// Down (S)
@@ -730,12 +734,14 @@ function startInput() {
 
 			// left
 			case 65:
-			    if (gameEngine.Hero.direction == -1) gameEngine.Hero.moving = false;
+			    left = false;
+			    if (left == false && right == false) gameEngine.Hero.moving = false;
 			    break;
 			
 			// right
 			case 68:
-			    if (gameEngine.Hero.direction == 1) gameEngine.Hero.moving = false;
+			    right = false;
+			    if (left == false && right == false) gameEngine.Hero.moving = false;
 			    break;
 			
 			//up
