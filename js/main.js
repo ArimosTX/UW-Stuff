@@ -730,12 +730,12 @@ function startInput() {
 
 			// left
 			case 65:
-			    gameEngine.Hero.moving = false;
+			    if (gameEngine.Hero.direction == -1) gameEngine.Hero.moving = false;
 			    break;
 			
 			// right
 			case 68:
-			    gameEngine.Hero.moving = false;
+			    if (gameEngine.Hero.direction == 1) gameEngine.Hero.moving = false;
 			    break;
 			
 			//up
